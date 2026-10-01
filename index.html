@@ -32,6 +32,17 @@
     <!-- Processing Button -->
     <button id="matchBtn" disabled>Run Deep Image Analysis</button>
 
+    <!-- Debug Section UI Layout -->
+    <div id="debugSection" style="display:none; margin-top: 20px; background:#fff; padding:15px; border-radius:6px; border:1px solid #e1e4e8;">
+        <h4 style="margin:0 0 10px 0;">🔍 Visual Calibration Canvas</h4>
+        <p style="margin:0 0 15px 0; font-size:12px; color:#586069;">
+            🟢 Green squares = Text zones (OCR). 🔴 Red dots = Part color sampling locations (Left edge). Blue outlines = Strategy boxes.
+        </p>
+        <div style="text-align:center;">
+            <canvas id="debugCanvas" style="max-width:100%; border:1px solid #e1e4e8; border-radius:4px; box-shadow:0 1px 3px rgba(0,0,0,0.05);"></canvas>
+        </div>
+    </div>
+
     <!-- This container is where app.js dynamically injects the reporting table dashboard -->
     <div class="canvas-container"></div>
 </div>
