@@ -65,15 +65,10 @@
                 }
                 
                 // Confirm the foundational C++ constructors (like Mat) are compiled and alive
-                if (window.cv && window.cv.Mat) {
+                if (window.cv && window.cv.Mat && window.onOpenCvReady === 'function') {
                     clearInterval(checkOpenCV);
                     console.log("OpenCV.js Engine is fully compiled!");
-                    console.log("typeof window.onOpenCvReady: ", typeof window.onOpenCvReady);
-                    
-                    // Fire the callback method inside your app.js orchestrator
-                    if (typeof window.onOpenCvReady === 'function') {
-                        window.onOpenCvReady();
-                    }
+                    window.onOpenCvReady();
                 }
             } catch (e) {
                 console.log("Waiting for WebAssembly compilation...", e);
