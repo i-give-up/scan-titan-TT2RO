@@ -180,14 +180,16 @@ function renderOutputDashboard(data) {
                     </tr>
                 </thead>
                 <tbody>
-                    ${Object.entries(data.parts).map(([partName, meta]) => {
+                    \${Object.entries(data.parts).map(([partName, meta]) => {
                         const styleColor = meta.action.includes('Ignore') ? '#cb2431' : '#2ea44f';
+                        const formattedName = partName.replace(/([A-Z])/g, ' \$1').replace(/^./, str => str.toUpperCase());
+                        
                         return `
                             <tr style="border-bottom:1px solid #e1e4e8;">
-                                <td style="padding:10px; border:1px solid #e1e4e8; font-weight:bold; text-transform:capitalize;">\${partName.replace(/([A-Z])/g, ' \$1')}</td>
-                                <td style="padding:10px; border:1px solid #e1e4e8;">\${meta.currentHealth}</td>
-                                <td style="padding:10px; border:1px solid #e1e4e8;">\${meta.layer}</td>
-                                <td style="padding:10px; border:1px solid #e1e4e8; color:styleColor; font-weight:bold;">{meta.action}</td>
+                                <td style="padding:10px; border:1px solid #e1e4e8; font-weight:bold;">${formattedName}</td>
+                                <td style="padding:10px; border:1px solid #e1e4e8;">${meta.currentHealth}</td>
+                                <td style="padding:10px; border:1px solid #e1e4e8;">${meta.layer}</td>
+                                <td style="padding:10px; border:1px solid #e1e4e8; color:${styleColor}; font-weight:bold;">${meta.action}</td>
                             </tr>
                         `;
                     }).join('')}
