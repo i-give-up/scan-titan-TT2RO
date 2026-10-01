@@ -3,41 +3,47 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Multi-Resolution Template Matcher</title>
-    <!-- 1. Link to your external stylesheet -->
+    <title>Tap Titans 2 - Raid Analyzer</title>
+    <!-- Link to your external stylesheet -->
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
 <div class="container">
-    <h2>📸 Multi-Resolution Image Locator</h2>
-    <p id="status">⏳ Loading OpenCV.js (WebAssembly)... Please wait.</p>
+    <h2>📸 Tap Titans 2 Raid Scanner</h2>
+    <p id="status">⏳ Initializing Web Engines (OpenCV & Tesseract)... Please wait.</p>
 
     <div class="upload-section">
         <div class="upload-box">
-            <strong>1. Main Image (Scene)</strong>
+            <strong>1. Upload Raid Screenshot (raid.jpg)</strong>
+            <p class="box-desc">Shows the live Titan health bars and strategies</p>
             <input type="file" id="sceneInput" accept="image/*" disabled>
-            <img id="scenePreview" class="preview-img" alt="Scene preview">
+            <img id="scenePreview" class="preview-img" alt="Raid snapshot preview">
         </div>
+        
         <div class="upload-box">
-            <strong>2. Template Image (To Find)</strong>
+            <strong>2. Upload Info Screenshot (info.jpg)</strong>
+            <p class="box-desc">Shows the Titan reference data database rows</p>
             <input type="file" id="templateInput" accept="image/*" disabled>
-            <img id="templatePreview" class="preview-img" alt="Template preview">
+            <img id="templatePreview" class="preview-img" alt="Info panel preview">
         </div>
     </div>
 
-    <button id="matchBtn" disabled>Find Template Location</button>
+    <!-- Processing Button -->
+    <button id="matchBtn" disabled>Run Deep Image Analysis</button>
 
-    <div class="canvas-container">
-        <canvas id="outputCanvas"></canvas>
-    </div>
+    <!-- This container is where app.js dynamically injects the reporting table dashboard -->
+    <div class="canvas-container"></div>
 </div>
 
-<!-- 2. Load OpenCV.js version 5.0 via CDN -->
-<script async src="https://docs.opencv.org/5.0/opencv.js" onload="onOpenCvReady();" type="text/javascript"></script>
+<!-- Load Tesseract.js for browser-based Optical Character Recognition -->
+<script src='https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js'></script>
 
-<!-- 3. Link to your external JavaScript file -->
-<script src="app.js" defer></script>
+<!-- Load OpenCV.js from official mirrors for canvas manipulation tasks -->
+<script async src="https://docs.opencv.org/5.0/opencv.js" onload="window.onOpenCvReady();" type="text/javascript"></script>
+
+<!-- Load your application code explicitly as an ES Module to support internal system imports -->
+<script src="app.js" type="module" defer></script>
 
 </body>
 </html>
