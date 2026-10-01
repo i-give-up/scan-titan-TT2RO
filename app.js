@@ -1,122 +1,186 @@
-const status = document.getElementById('status');
-const sceneInput = document.getElementById('sceneInput');
-const templateInput = document.getElementById('templateInput');
-const matchBtn = document.getElementById('matchBtn');
-const outputCanvas = document.getElementById('outputCanvas');
+/**
+ * app.js
+ * Master orchestrator connecting the UI layer to pixelReader.js and ocrEngine.js modules.
+ */
 
-// Enable inputs once OpenCV.js finishes downloading
-function onOpenCvReady() {
-    status.textContent = "✅ OpenCV.js is ready! Upload your images.";
-    status.style.color = "#2ea44f";
+import { analyzeTitanParts } from './modules/pixelReader.js';
+import { parseRaidImage, parseInfoImage } from './modules/ocrEngine.js';
+
+// Dom Elements
+const statusText = document.getElementById('status');
+const sceneInput = document.getElementById('sceneInput'); // raid.jpg
+const templateInput = document.getElementById('templateInput'); // info.jpg
+const matchBtn = document.getElementById('matchBtn');
+
+// Previews
+const raidPreview = document.getElementById('scenePreview');
+const infoPreview = document.getElementById('templatePreview');
+const canvasContainer = document.querySelector('.canvas-container');
+
+/**
+ * Global Callback executed when OpenCV.js finishes loading.
+ * Configured in index.html script onload hook.
+ */
+window.onOpenCvReady = function() {
+    statusText.textContent = "✅ System ready. Please upload your Raid and Info screenshots.";
+    statusText.style.color = "#2ea44f";
     sceneInput.disabled = false;
     templateInput.disabled = false;
     
-    setupPreview(sceneInput, 'scenePreview');
-    setupPreview(templateInput, 'templatePreview');
-}
+    setupImagePreview(sceneInput, raidPreview);
+    setupImagePreview(templateInput, infoPreview);
+};
 
-// Helper to handle image file uploads and local image previewing
-function setupPreview(inputElement, previewId) {
-    inputElement.addEventListener('change', (e) => {
+/**
+ * Utility to process user image uploads and display local thumbnail assets
+ */
+function setupImagePreview(inputEl, imgPreviewEl) {
+    inputEl.addEventListener('change', (e) => {
         const file = e.target.files[0];
         if (file) {
-            const img = document.getElementById(previewId);
-            img.src = URL.createObjectURL(file);
-            img.style.display = 'block';
-            checkReadyToMatch();
+            imgPreviewEl.src = URL.createObjectURL(file);
+            imgPreviewEl.style.display = 'block';
+            evaluateButtonState();
         }
     });
 }
 
-function checkReadyToMatch() {
+function evaluateButtonState() {
     if (sceneInput.files.length && templateInput.files.length) {
         matchBtn.disabled = false;
     }
 }
 
-// Main logic executing Scale-Invariant Feature Matching
-matchBtn.addEventListener('click', () => {
-    status.textContent = "🔍 Analyzing features and scales...";
-    status.style.color = "#0366d6";
+/**
+ * Core execution pipeline triggered by the user
+ */
+matchBtn.addEventListener('click', async () => {
+    matchBtn.disabled = true;
+    statusText.textContent = "⏳ Phase 1: Analyzing Titan color layers and action strategies...";
+    statusText.style.color = "#0366d6";
 
-    setTimeout(() => {
-        try {
-            // 1. Read images directly from HTML img previews
-            let src = cv.imread('scenePreview');
-            let templ = cv.imread('templatePreview');
+    // Small delay to allow UI loading text thread to paint on slower devices
+    await new Promise(resolve => setTimeout(resolve, 100));
 
-            // 2. Convert to Grayscale for faster processing
-            let srcGray = new cv.Mat();
-            let templGray = new cv.Mat();
-            cv.cvtColor(src, srcGray, cv.COLOR_RGBA2GRAY, 0);
-            cv.cvtColor(templ, templGray, cv.COLOR_RGBA2GRAY, 0);
+    try {
+        // 1. Core Pixels Scan (Raid Image Health Layers & Checkboxes)
+        const visualPartStates = analyzeTitanParts(raidPreview);
 
-            // 3. Setup Scale-Invariant ORB Detector
-            let orb = new cv.ORB();
-            let keypointsSrc = new cv.KeyPointVector();
-            let keypointsTempl = new cv.KeyPointVector();
-            let descriptorsSrc = new cv.Mat();
-            let descriptorsTempl = new cv.Mat();
+        statusText.textContent = "⏳ Phase 2: Running OCR text mapping on Raid metrics...";
+        // 2. OCR Scan on Raid Image (Name, Morale & Health Numbers)
+        const raidOcrResults = await parseRaidImage(raidPreview);
+        const titanName = raidOcrResults.titanLordName || "Unknown Titan";
 
-            orb.detectAndCompute(srcGray, new cv.Mat(), keypointsSrc, descriptorsSrc);
-            orb.detectAndCompute(templGray, new cv.Mat(), keypointsTempl, descriptorsTempl);
+        statusText.textContent = `⏳ Phase 3: Merging data blocks and parsing targeted metrics for ${titanName}...`;
+        // 3. OCR Scan on Stats Image using the located Titan name
+        const infoOcrResults = await parseInfoImage(infoPreview, titanName);
 
-            // 4. Match features using Brute-Force
-            let matcher = new cv.BFMatcher(cv.NORM_HAMMING, true);
-            let matches = new cv.DMatchVector();
-            matcher.match(descriptorsTempl, descriptorsSrc, matches);
+        // 4. Build consolidated data structure combining both screens
+        const consolidatedData = compileDataset(visualPartStates, raidOcrResults, infoOcrResults, titanName);
 
-            // 5. Filter out weak visual feature matches
-            let goodMatches = [];
-            for (let i = 0; i < matches.size(); ++i) {
-                let match = matches.get(i);
-                if (match.distance < 45) { // Strict filtering for resolution variations
-                    goodMatches.push(match);
-                }
-            }
+        // 5. Draw results dashboard on screen
+        renderOutputDashboard(consolidatedData);
 
-            // 6. Calculate coordinates and plot result
-            if (goodMatches.length >= 3) {
-                let totalX = 0, totalY = 0;
-                goodMatches.forEach(match => {
-                    let kp = keypointsSrc.get(match.trainIdx);
-                    totalX += kp.pt.x;
-                    totalY += kp.pt.y;
-                });
+        statusText.textContent = "🎯 Complete! Structured Raid Report generated below.";
+        statusText.style.color = "#2ea44f";
 
-                let centerX = totalX / goodMatches.length;
-                let centerY = totalY / goodMatches.length;
-
-                // Draw a visual crosshair target over the located position
-                outputCanvas.style.display = "block";
-                cv.imshow('outputCanvas', src); // Draw base scene first
-                
-                let ctx = outputCanvas.getContext('2d');
-                ctx.strokeStyle = '#ff0000';
-                ctx.lineWidth = 4;
-                ctx.beginPath();
-                // Draw outer tracking square
-                ctx.rect(centerX - 30, centerY - 30, 60, 60);
-                // Center dot
-                ctx.arc(centerX, centerY, 3, 0, 2 * Math.PI);
-                ctx.stroke();
-
-                status.textContent = `🎯 Located template at X: ${Math.round(centerX)}, Y: ${Math.round(centerY)}`;
-                status.style.color = "#2ea44f";
-            } else {
-                status.textContent = "❌ Could not find a match. The scales might be too extremely different or features are too blurry.";
-                status.style.color = "#cb2431";
-            }
-
-            // Clean memory leak allocations (Critical in OpenCV.js)
-            src.delete(); templ.delete(); srcGray.delete(); templGray.delete();
-            orb.delete(); keypointsSrc.delete(); keypointsTempl.delete();
-            descriptorsSrc.delete(); descriptorsTempl.delete(); matcher.delete(); matches.delete();
-
-        } catch (err) {
-            status.textContent = "⚠️ Error occurred during computation.";
-            status.style.color = "#cb2431";
-            console.error(err);
-        }
-    }, 50);
+    } catch (error) {
+        statusText.textContent = "⚠️ Processing failure. Ensure your screenshots match typical template crops.";
+        statusText.style.color = "#cb2431";
+        console.error("Pipeline failure details:", error);
+    } finally {
+        matchBtn.disabled = false;
+    }
 });
+
+/**
+ * Combines pixel reading logic with text arrays into a structured object map
+ */
+function compileDataset(visuals, raidOcr, infoOcr, name) {
+    const finalParts = {};
+    const structuralParts = ['head', 'leftShoulder', 'rightShoulder', 'leftArm', 'rightArm', 'torso', 'leftLeg', 'rightLeg'];
+
+    structuralParts.forEach(part => {
+        const visualMeta = visuals[part] || { layer: 'Unknown', action: 'Target/Attack' };
+        const healthText = raidOcr.partHealthPools?.[part] || 'Missing Bar / Skeleton';
+
+        // Override target if pixel engine flagged a missing bar region as a skeleton
+        let interpretedLayer = visualMeta.layer;
+        if (healthText.includes('Skeleton') || healthText.includes('Missing')) {
+            interpretedLayer = 'Skeleton Part';
+        }
+
+        finalParts[part] = {
+            layer: interpretedLayer,
+            action: visualMeta.action,
+            currentHealth: healthText
+        };
+    });
+
+    return {
+        titanName: name,
+        moraleBonus: raidOcr.moraleBonus,
+        raidBonusMultiplier: infoOcr.raidBonus,
+        parts: finalParts,
+        titanLordBaseStats: infoOcr.titanStats
+    };
+}
+
+/**
+ * Dynamically modifies HTML layouts to map an interactive reporting grid
+ */
+function renderOutputDashboard(data) {
+    // Clear dynamic area container
+    canvasContainer.innerHTML = '';
+
+    const dashboardHtml = `
+        <div class="report-card" style="width:100%; border:1px solid #e1e4e8; padding:20px; border-radius:6px; background:#fff; margin-top:20px;">
+            <h3 style="margin-top:0; color:#24292e; border-bottom:1px solid #e1e4e8; padding-bottom:8px;">📊 Target Profile: ${data.titanName}</h3>
+            
+            <div style="display:flex; gap:30px; margin-bottom:20px; flex-wrap:wrap; font-size:14px;">
+                <div><strong>Build Morale Value:</strong> <span style="color:#0366d6">${data.moraleBonus}</span></div>
+                <div><strong>Raid Card Bonus:</strong> <span style="color:#2ea44f">${data.raidBonusMultiplier}</span></div>
+            </div>
+
+            <h4 style="margin-bottom:10px;">🛡️ Active Titan Part Statuses (raid.jpg)</h4>
+            <table style="width:100%; border-collapse:collapse; text-align:left; font-size:14px; margin-bottom:25px;">
+                <thead>
+                    <tr style="background:#f6f8fa; border-bottom:2px solid #e1e4e8;">
+                        <th style="padding:10px; border:1px solid #e1e4e8;">Titan Part</th>
+                        <th style="padding:10px; border:1px solid #e1e4e8;">Current HP</th>
+                        <th style="padding:10px; border:1px solid #e1e4e8;">Detected Layer</th>
+                        <th style="padding:10px; border:1px solid #e1e4e8;">Action Directive</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${Object.entries(data.parts).map(([partName, meta]) => {
+                        const styleColor = meta.action.includes('Ignore') ? '#cb2431' : '#2ea44f';
+                        return `
+                            <tr style="border-bottom:1px solid #e1e4e8;">
+                                <td style="padding:10px; border:1px solid #e1e4e8; font-weight:bold; text-transform:capitalize;">\${partName.replace(/([A-Z])/g, ' \$1')}</td>
+                                <td style="padding:10px; border:1px solid #e1e4e8;">\${meta.currentHealth}</td>
+                                <td style="padding:10px; border:1px solid #e1e4e8;">\${meta.layer}</td>
+                                <td style="padding:10px; border:1px solid #e1e4e8; color:styleColor; font-weight:bold;">{meta.action}</td>
+                            </tr>
+                        `;
+                    }).join('')}
+                </tbody>
+            </table>
+
+            <h4 style="margin-bottom:10px;">📋 Lord Reference Database Metrics (info.jpg)</h4>
+            <div style="background:#f6f8fa; padding:15px; border-radius:6px; font-size:13px; font-family:monospace; border:1px solid #e1e4e8; line-height:1.6;">
+                <div><strong>Titan Specific Target Debuff:</strong> <span style="color:#cb2431">${data.titanLordBaseStats.debuff}</span></div>
+                <div><strong>Cursed Armor Coefficient:</strong> <span style="color:#cb2431">${data.titanLordBaseStats.cursedArmorEffect}</span></div>
+                <div style="margin-top:10px; font-weight:bold;">Extracted Reference Bounds:</div>
+                <ul style="margin:5px 0 0 20px; padding:0;">
+                    <li>Head Layer Pools -> Body: ${data.titanLordBaseStats.body.head} | Armor: ${data.titanLordBaseStats.armor.head}</li>
+                    <li>Torso Layer Pools -> Body: ${data.titanLordBaseStats.body.torso} | Armor: ${data.titanLordBaseStats.armor.torso}</li>
+                    <li>Arms Layer Pools -> Body: ${data.titanLordBaseStats.body.arms} | Armor: ${data.titanLordBaseStats.armor.arms}</li>
+                    <li>Legs Layer Pools -> Body: ${data.titanLordBaseStats.body.legs} | Armor: ${data.titanLordBaseStats.armor.legs}</li>
+                </ul>
+            </div>
+        </div>
+    `;
+
+    canvasContainer.innerHTML = dashboardHtml;
+}
