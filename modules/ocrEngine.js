@@ -104,12 +104,12 @@ export async function parseRaidImage(raidImgElement, bounds) {
     nameCanvas.width = nameCropW; nameCanvas.height = nameCropH;
     nameCanvas.getContext('2d').drawImage(raidImgElement, nameCropX, nameCropY, nameCropW, nameCropH, 0, 0, nameCropW, nameCropH);
 
-    // 1. WIDEN THE WINDOW: Create a tall, safe tracking zone (Y: 0.54 to 0.66) 
-    // This ensures that even if the row moves up or down, it will always be caught inside this box.
+    // 1. BROAD COALESCENCE ZONE: Sweep the entire center of the display (Y: 0.35 to 0.75)
+    // This ensures the Morale banner is always caught, no matter where it floats on your device screen.
     const moraleCropX = Math.round(0.05 * raidImgElement.naturalWidth);
-    const moraleCropY = Math.round(0.40 * bounds.height) + bounds.top; 
+    const moraleCropY = Math.round(0.35 * bounds.height) + bounds.top; 
     const moraleCropW = Math.round(0.90 * raidImgElement.naturalWidth);
-    const moraleCropH = Math.round(0.13 * bounds.height); // Made tall enough to cleanly encapsulate the row
+    const moraleCropH = Math.round(0.40 * bounds.height); // Capture the whole center spectrum at once
     
     const moraleCanvas = document.createElement('canvas');
     moraleCanvas.width = moraleCropW; moraleCanvas.height = moraleCropH;
@@ -148,19 +148,34 @@ export async function parseRaidImage(raidImgElement, bounds) {
     }
 
     console.log('rawMoraleText: ', rawMoraleText);
-    // 3. ROBUST REGEX PARSING: Extract the value out of the text mass
-    // This looks for anything resembling "Morale", "Active", or "Bonus", then grabs the nearby numbers and percent sign
-    const moraleRegex = /(?:morale|active|bonus)[^0-9]*\+?\s*([0-9.]+)\s*%/i;
-    const moraleMatch = rawMoraleText.match(moraleRegex);
+    // 3. MULTI-LINE FILTERING: Inspect the entire text array line-by-line
+    const lines = rawMoraleText.split('\n').map(l => l.trim()).filter(Boolean);
     let moraleValue = "Not Found";
     
-    if (moraleMatch) {
-        moraleValue = `${moraleMatch[1]}%`;
-    } else {
-        // Fallback: If "Morale" keyword was garbled, just look for any isolated percentage number inside the wide box
-        const secondaryRegex = /([0-9.]+)\s*%/;
-        const fallbackMatch = rawMoraleText.match(secondaryRegex);
-        if (fallbackMatch) moraleValue = `${fallbackMatch[1]}%`;
+    // Loop through every line found in the wide canvas catch net
+    for (const line of lines) {
+        // Look for structural keywords unique to the Morale status banner
+        if (/morale|active|bonus/i.test(line)) {
+            const match = line.match(/([0-9.]+)\s*%/);
+            if (match) {
+                moraleValue = `${match[1]}%`;
+                break; // Lock onto the value and exit the loop immediately!
+            }
+        }
+    }
+    
+    // Fallback: If keywords were garbled but an isolated percentage string exists near the middle frame
+    if (moraleValue === "Not Found") {
+        for (const line of lines) {
+            // Filter out rank lists (lines containing names like "Gosu" or attack metrics like "12/12")
+            if (!/\d+\/\d+/.test(line) && !/rank|name|damage/i.test(line)) {
+                const match = line.match(/([0-9.]+)\s*%/);
+                if (match) {
+                    moraleValue = `${match[1]}%`;
+                    break;
+                }
+            }
+        }
     }
 
     return {
