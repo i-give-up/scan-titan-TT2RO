@@ -6,7 +6,7 @@
 // Normalized anchors mapping the location of each part.
 // Shifted to the absolute far-left edge (~1-2% into the bar asset) to catch 2% HP remaining.
 const TITAN_PART_ANCHORS = {
-    head:           { bar: { x: 0.460, y: 0.315 }, box: { x: 0.500, y: 0.322 } }, 
+    head:           { bar: { x: 0.423, y: 0.273 }, box: { x: 0.495, y: 0.298 } }, 
     leftShoulder:   { bar: { x: 0.220, y: 0.310 }, box: { x: 0.282, y: 0.345 } }, 
     rightShoulder:  { bar: { x: 0.655, y: 0.310 }, box: { x: 0.718, y: 0.345 } }, 
     leftArm:        { bar: { x: 0.200, y: 0.380 }, box: { x: 0.282, y: 0.415 } }, 
