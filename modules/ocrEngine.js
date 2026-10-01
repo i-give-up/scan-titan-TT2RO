@@ -134,7 +134,7 @@ export async function parseRaidImage(raidImgElement, bounds) {
     let titanLordName = "Unknown Titan";
     // Strip punctuation and normalize string to protect against spacing bugs
     const normalizedScannedText = rawTopText.toLowerCase().replace(/[^a-z0-9]/g, '');
-    console.log(normalizedScannedText);
+    // console.log(normalizedScannedText);
 
     // Search text for registry signatures
     for (const lord of TITAN_LORDS_REGISTRY) {
@@ -147,6 +147,7 @@ export async function parseRaidImage(raidImgElement, bounds) {
     }
 
     // 3. Extract Morale Value
+    console.log(rawMoraleText);
     const moraleRegex = /Build\s+Morale\s+Active\s+\+?([0-9.]+)%/i;
     const moraleMatch = rawMoraleText.match(moraleRegex);
     const moraleValue = moraleMatch ? `${moraleMatch[1]}%` : "Not Found";
