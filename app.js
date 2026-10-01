@@ -63,6 +63,7 @@ matchBtn.addEventListener('click', async () => {
     
     // Show the visual debug panel container immediately
     debugSection.style.display = "block";
+    debugCanvas.style.display = "inline-block"; // Explicitly clear any hidden canvas parameters
     
     // Small delay to allow UI loading text thread to paint on slower devices
     await new Promise(resolve => setTimeout(resolve, 100));
@@ -80,16 +81,18 @@ matchBtn.addEventListener('click', async () => {
             dCtx.strokeStyle = '#2ea44f';
             dCtx.lineWidth = Math.max(4, w * 0.003);
         
-            // Draw the green boxes shifted to match the content boundaries
-            const nameY = Math.round(0.10 * bounds.height) + bounds.top; // Match the 0.10 start coordinate
-            const nameH = Math.round(0.15 * bounds.height);             // Match the 0.15 height frame
+            // Outline Top Panel Name Scan Window
+            const nameY = Math.round(0.10 * bounds.height) + bounds.top;
+            const nameH = Math.round(0.15 * bounds.height);
             dCtx.strokeRect(Math.round(0.05 * w), nameY, Math.round(0.90 * w), nameH);
-            
+            dCtx.fillStyle = '#2ea44f';
+            dCtx.font = `bold ${Math.max(14, w * 0.012)}px monospace`;
+            dCtx.fillText("[OCR Zone: Full Top Name Sweep]", Math.round(0.05 * w), nameY - 6);
+
+            // Outline Center Morale Row Window
             const moraleY = Math.round(0.35 * bounds.height) + bounds.top;
             const moraleH = Math.round(0.40 * bounds.height);
-            dCtx.strokeStyle = '#2ea44f';
             dCtx.strokeRect(Math.round(0.05 * w), moraleY, Math.round(0.90 * w), moraleH);
-            dCtx.fillStyle = '#2ea44f';
             dCtx.fillText("[OCR Zone: Full Center Morale Sweep]", Math.round(0.05 * w), moraleY - 6);
         }
 
