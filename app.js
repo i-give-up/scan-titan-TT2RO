@@ -81,9 +81,9 @@ matchBtn.addEventListener('click', async () => {
             dCtx.lineWidth = Math.max(4, w * 0.003);
         
             // Draw the green boxes shifted to match the content boundaries
-            const nameY = Math.round(0.20 * bounds.height) + bounds.top;
-            const nameH = Math.round(0.035 * bounds.height);
-            dCtx.strokeRect(Math.round(0.15 * w), nameY, Math.round(0.70 * w), nameH);
+            const nameY = Math.round(0.10 * bounds.height) + bounds.top; // Match the 0.10 start coordinate
+            const nameH = Math.round(0.15 * bounds.height);             // Match the 0.15 height frame
+            dCtx.strokeRect(Math.round(0.05 * w), nameY, Math.round(0.90 * w), nameH);
             
             const moraleY = Math.round(0.70 * bounds.height) + bounds.top;
             const moraleH = Math.round(0.06 * bounds.height);
