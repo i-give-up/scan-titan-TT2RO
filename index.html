@@ -68,6 +68,7 @@
                 if (window.cv && window.cv.Mat) {
                     clearInterval(checkOpenCV);
                     console.log("OpenCV.js Engine is fully compiled!");
+                    console.log("typeof window.onOpenCvReady: ", typeof window.onOpenCvReady);
                     
                     // Fire the callback method inside your app.js orchestrator
                     if (typeof window.onOpenCvReady === 'function') {
