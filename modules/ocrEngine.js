@@ -9,12 +9,13 @@
  * @param {string} whitelist - Optional character whitelist to reduce recognition errors
  */
 async function processCrop(canvasCrop, whitelist = '') {
-    const worker = await Tesseract.createWorker();
-    await worker.loadLanguage('eng');
-    await worker.initialize('eng');
+    // Pass the target language code directly into the initialization constructor
+    const worker = await Tesseract.createWorker('eng');
     
     if (whitelist) {
-        await worker.setParameters({ tessedit_char_whitelist: whitelist });
+        await worker.setParameters({ 
+            tessedit_char_whitelist: whitelist 
+        });
     }
 
     const { data: { text } } = await worker.recognize(canvasCrop);
