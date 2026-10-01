@@ -89,58 +89,62 @@ async function parsePartHealthPools(raidImgElement, bounds) {
 }
 
 /**
- * 1 & 3. Processes raid.jpg to extract Titan Name, Build Morale value, and Part Health Pools using bounding box offsets.
+ * 1 & 3. Processes raid.jpg to extract Titan Name (via Lookup) and Build Morale value
  * @param {HTMLImageElement} raidImgElement 
- * @param {Object} bounds - The content bounds returned from pixelReader.js
+ * @param {Object} bounds - Content boundaries from pixelReader.js
  */
 export async function parseRaidImage(raidImgElement, bounds) {
-    // Captures a thin, full-width window (X: 10% to 90%) right where the master HP row sits
-    // Crop coordinates map cleanly relative to the true gameplay height window
-    const nameCropX = Math.round(0.15 * raidImgElement.naturalWidth);
-    const nameCropY = Math.round(0.20 * bounds.height) + bounds.top; // Drop down below header
-    const nameCropW = Math.round(0.70 * raidImgElement.naturalWidth);
-    const nameCropH = Math.round(0.035 * bounds.height);
+    // 1. Safe, wide coordinate sweep covering the entire top panel area (Y: 10% to 25%)
+    const nameCropX = Math.round(0.05 * raidImgElement.naturalWidth);
+    const nameCropY = Math.round(0.10 * bounds.height) + bounds.top;
+    const nameCropW = Math.round(0.90 * raidImgElement.naturalWidth);
+    const nameCropH = Math.round(0.15 * bounds.height);
 
+    const nameCanvas = document.createElement('canvas');
+    nameCanvas.width = nameCropW; nameCanvas.height = nameCropH;
+    nameCanvas.getContext('2d').drawImage(raidImgElement, nameCropX, nameCropY, nameCropW, nameCropH, 0, 0, nameCropW, nameCropH);
+
+    // Morale Crop Box Alignment
     const moraleCropX = Math.round(0.05 * raidImgElement.naturalWidth);
     const moraleCropY = Math.round(0.70 * bounds.height) + bounds.top;
     const moraleCropW = Math.round(0.90 * raidImgElement.naturalWidth);
     const moraleCropH = Math.round(0.06 * bounds.height);
 
-    // Build the sharp canvas slices
-    const nameCanvas = document.createElement('canvas');
-    nameCanvas.width = nameCropW; nameCanvas.height = nameCropH;
-    nameCanvas.getContext('2d').drawImage(raidImgElement, nameCropX, nameCropY, nameCropW, nameCropH, 0, 0, nameCropW, nameCropH);
-
     const moraleCanvas = document.createElement('canvas');
     moraleCanvas.width = moraleCropW; moraleCanvas.height = moraleCropH;
     moraleCanvas.getContext('2d').drawImage(raidImgElement, moraleCropX, moraleCropY, moraleCropW, moraleCropH, 0, 0, moraleCropW, moraleCropH);
 
-    // Run Tesseract extraction loops
-    const rawNameHpText = await processCrop(nameCanvas, 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789.,+%/ ');
+    // Run parallel OCR loops
+    const rawTopText = await processCrop(nameCanvas);
     const rawMoraleText = await processCrop(moraleCanvas, 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789.+% ');
-    
-    // Call the standard limb metrics pass
     const partHealthPools = await parsePartHealthPools(raidImgElement, bounds);
 
-    // Parse out Name string
+    // There are 8 possible Titan Lords in a clan raid
+    const TITAN_LORDS_REGISTRY = [
+        "Lojak the Fissure",
+        "Takedar the Reborn",
+        "Jukk the Overseer",
+        "Sterl the Unmaker",
+        "Mohaca the Gale",
+        "Terro the Seeker",
+        "Klonk the Illuminator",
+        "Priker the Otherworldly"
+    ];
+
     let titanLordName = "Unknown Titan";
-    const cleanedLine = rawNameHpText.trim().replace(/\s+/g, ' ');
-    const hpSplitRegex = /\s*[0-9.,]+\s*[MBKmbk]?\s*HP.*/i;
-    
-    if (hpSplitRegex.test(cleanedLine)) {
-        const parts = cleanedLine.split(hpSplitRegex);
-        if (parts[0] && parts[0].trim().length > 0) {
-            titanLordName = parts[0].trim();
-        }
-    } else {
-        const firstNumberMatch = cleanedLine.match(/[0-9]/);
-        if (firstNumberMatch && firstNumberMatch.index > 2) {
-            titanLordName = cleanedLine.substring(0, firstNumberMatch.index).trim();
-        } else {
-            titanLordName = cleanedLine;
+    const normalizedScannedText = rawTopText.toLowerCase();
+
+    // Check if any registry keyword exists anywhere inside our raw text sweep
+    for (const officialName of TITAN_LORDS_REGISTRY) {
+        // Splitting or matching the primary token (e.g. matching "klonk") handles fuzzy text around it
+        const firstToken = officialName.toLowerCase().split(" ")[0]; 
+        if (normalizedScannedText.includes(firstToken)) {
+            titanLordName = officialName; // Force snap to the clean official string spelling
+            break;
         }
     }
 
+    // 3. Extract Morale Value
     const moraleRegex = /Build\s+Morale\s+Active\s+\+?([0-9.]+)%/i;
     const moraleMatch = rawMoraleText.match(moraleRegex);
     const moraleValue = moraleMatch ? `${moraleMatch[1]}%` : "Not Found";
@@ -159,10 +163,10 @@ export async function parseRaidImage(raidImgElement, bounds) {
  * @param {string} targetTitanName - The name extracted from the raid image (e.g., "Klonk the Illuminator")
  */
 export async function parseInfoImage(infoImgElement, targetTitanName) {
-    // 1. Crop full text sweep to dynamically target table locations
-    const fullCanvas = createCropCanvas(infoImgElement, 0, 0, 1.0, 1.0);
-    const fullText = await processCrop(fullCanvas);
-    const lines = fullText.split('\n').map(line => line.trim()).filter(Boolean);
+    const fullCanvas = document.createElement('canvas');
+    fullCanvas.width = infoImgElement.naturalWidth;
+    fullCanvas.height = infoImgElement.naturalHeight;
+    fullCanvas.getContext('2d').drawImage(infoImgElement, 0, 0);
 
     let raidBonus = "Not Found";
     let stats = {
