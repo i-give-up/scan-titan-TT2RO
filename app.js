@@ -157,8 +157,25 @@ function compileDataset(visuals, raidOcr, infoOcr, name) {
  * Dynamically modifies HTML layouts to map an interactive reporting grid
  */
 function renderOutputDashboard(data) {
+    // 1. Build table rows safely in a standalone loop to prevent nested string breaks
+    const tableRows = Object.entries(data.parts).map(([partName, meta]) => {
+        const styleColor = meta.action.includes('Ignore') ? '#cb2431' : '#2ea44f';
+        const formattedName = partName.replace(/([A-Z])/g, ' \$1').replace(/^./, str => str.toUpperCase());
+        
+        return `
+            <tr style="border-bottom:1px solid #e1e4e8;">
+                <td style="padding:10px; border:1px solid #e1e4e8; font-weight:bold;">${formattedName}</td>
+                <td style="padding:10px; border:1px solid #e1e4e8;">${meta.currentHealth}</td>
+                <td style="padding:10px; border:1px solid #e1e4e8;">${meta.layer}</td>
+                <td style="padding:10px; border:1px solid #e1e4e8; color:${styleColor}; font-weight:bold;">${meta.action}</td>
+            </tr>
+        `;
+    }).join('');
+
+    // 2. Clear out old reporting outputs
     canvasContainer.innerHTML = '';
 
+    // 3. Inject the clean layout report card frame
     const dashboardHtml = `
         <div class="report-card" style="width:100%; border:1px solid #e1e4e8; padding:20px; border-radius:6px; background:#fff; margin-top:20px; box-sizing: border-box;">
             <h3 style="margin-top:0; color:#24292e; border-bottom:1px solid #e1e4e8; padding-bottom:8px;">📊 Target Profile: ${data.titanName}</h3>
@@ -179,19 +196,7 @@ function renderOutputDashboard(data) {
                     </tr>
                 </thead>
                 <tbody>
-                    ${Object.entries(data.parts).map(([partName, meta]) => {
-                        const styleColor = meta.action.includes('Ignore') ? '#cb2431' : '#2ea44f';
-                        const formattedName = partName.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase());
-                        
-                        return `
-                            <tr style="border-bottom:1px solid #e1e4e8;">
-                                <td style="padding:10px; border:1px solid #e1e4e8; font-weight:bold;">\${formattedName}</td>
-                                <td style="padding:10px; border:1px solid #e1e4e8;">\${meta.currentHealth}</td>
-                                <td style="padding:10px; border:1px solid #e1e4e8;">\${meta.layer}</td>
-                                <td style="padding:10px; border:1px solid #e1e4e8; color:styleColor; font-weight:bold;">{meta.action}</td>
-                            </tr>
-                        `;
-                    }).join('')}
+                    ${tableRows}
                 </tbody>
             </table>
 
@@ -212,3 +217,4 @@ function renderOutputDashboard(data) {
 
     canvasContainer.innerHTML = dashboardHtml;
 }
+
