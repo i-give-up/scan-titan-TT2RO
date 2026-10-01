@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Multi-Resolution Template Matcher</title>
+    <!-- 1. Link to your external stylesheet -->
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="container">
+    <h2>📸 Multi-Resolution Image Locator</h2>
+    <p id="status">⏳ Loading OpenCV.js (WebAssembly)... Please wait.</p>
+
+    <div class="upload-section">
+        <div class="upload-box">
+            <strong>1. Main Image (Scene)</strong>
+            <input type="file" id="sceneInput" accept="image/*" disabled>
+            <img id="scenePreview" class="preview-img" alt="Scene preview">
+        </div>
+        <div class="upload-box">
+            <strong>2. Template Image (To Find)</strong>
+            <input type="file" id="templateInput" accept="image/*" disabled>
+            <img id="templatePreview" class="preview-img" alt="Template preview">
+        </div>
+    </div>
+
+    <button id="matchBtn" disabled>Find Template Location</button>
+
+    <div class="canvas-container">
+        <canvas id="outputCanvas"></canvas>
+    </div>
+</div>
+
+<!-- 2. Load OpenCV.js via CDN -->
+<script async src="https://opencv.org" onload="onOpenCvReady();" type="text/javascript"></script>
+
+<!-- 3. Link to your external JavaScript file -->
+<script src="app.js" defer></script>
+
+</body>
+</html>
