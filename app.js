@@ -208,4 +208,5 @@ function renderOutputDashboard(data) {
     `;
 
     canvasContainer.innerHTML = dashboardHtml;
+    console.log(data);
 }
