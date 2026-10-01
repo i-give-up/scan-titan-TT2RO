@@ -106,7 +106,7 @@ function checkIsIgnored(ctx, pixelX, pixelY, boxRadius = 12) {
 /**
  * Main Orchestrator function for pixel reading
  * @param {HTMLImageElement} raidImageElement - The uploaded raid image element
- * @param {HTMLImageElement} debugCanvasElement - The debug canvas element duh
+ * @param {HTMLCanvasElement} debugCanvasElement - The debug canvas element duh
  * @returns {Object} Extracted component states for all 8 parts
  */
 export function analyzeTitanParts(raidImageElement, debugCanvasElement = null) {
