@@ -17,6 +17,51 @@ const TITAN_PART_ANCHORS = {
 };
 
 /**
+ * Automatically detects the true top and bottom margins of the gameplay area
+ * by scanning past solid black padding pixels.
+ */
+function findGameContentBounds(ctx, width, height) {
+    let topBoundary = 0;
+    let bottomBoundary = height;
+
+    // 1. Scan from the top down to locate the first non-black pixel row
+    for (let y = 0; y < height; y++) {
+        // Sample a few horizontal points across the row to avoid false hits from stray pixels
+        const p1 = ctx.getImageData(Math.round(width * 0.25), y, 1, 1).data;
+        const p2 = ctx.getImageData(Math.round(width * 0.50), y, 1, 1).data;
+        const p3 = ctx.getImageData(Math.round(width * 0.75), y, 1, 1).data;
+
+        // If any point is bright/colored (not near-black), we found the game content edge
+        if ((p1[0] > 15 || p1[1] > 15 || p1[2] > 15) ||
+            (p2[0] > 15 || p2[1] > 15 || p2[2] > 15) ||
+            (p3[0] > 15 || p3[1] > 15 || p3[2] > 15)) {
+            topBoundary = y;
+            break;
+        }
+    }
+
+    // 2. Scan from the bottom up to locate the lower padding edge
+    for (let y = height - 1; y >= 0; y--) {
+        const p1 = ctx.getImageData(Math.round(width * 0.25), y, 1, 1).data;
+        const p2 = ctx.getImageData(Math.round(width * 0.50), y, 1, 1).data;
+        const p3 = ctx.getImageData(Math.round(width * 0.75), y, 1, 1).data;
+
+        if ((p1[0] > 15 || p1[1] > 15 || p1[2] > 15) ||
+            (p2[0] > 15 || p2[1] > 15 || p2[2] > 15) ||
+            (p3[0] > 15 || p3[1] > 15 || p3[2] > 15)) {
+            bottomBoundary = y;
+            break;
+        }
+    }
+
+    return {
+        top: topBoundary,
+        bottom: bottomBoundary,
+        height: bottomBoundary - topBoundary
+    };
+}
+
+/**
  * Converts RGB values to HSL (Hue, Saturation, Lightness).
  * HSL makes color detection much less sensitive to screen brightness variations.
  */
@@ -117,7 +162,11 @@ export function analyzeTitanParts(raidImageElement, debugCanvasElement = null) {
     ctx.drawImage(raidImageElement, 0, 0);
 
     const width = canvas.width;
-    const height = canvas.height;
+    const rawHeight = canvas.height;
+
+    // NEW: Get the true dimensions by subtracting the black space
+    const bounds = findGameContentBounds(ctx, width, rawHeight);
+    
     const results = {};
 
     // Setup visual debug drawing if requested
@@ -131,11 +180,11 @@ export function analyzeTitanParts(raidImageElement, debugCanvasElement = null) {
     }
 
     for (const [partName, anchors] of Object.entries(TITAN_PART_ANCHORS)) {
-        // Calculate absolute pixel coordinates from normalized anchor definitions
+        // Calculate Y mapping relative to the game bounds, then add top offset
         const barX = Math.round(anchors.bar.x * width);
-        const barY = Math.round(anchors.bar.y * height);
+        const barY = Math.round(anchors.bar.y * bounds.height) + bounds.top;
         const boxX = Math.round(anchors.box.x * width);
-        const boxY = Math.round(anchors.box.y * height);
+        const boxY = Math.round(anchors.box.y * bounds.height) + bounds.top;
 
         // Get RGB of the health bar
         const pixelData = ctx.getImageData(barX, barY, 1, 1).data;
@@ -172,5 +221,6 @@ export function analyzeTitanParts(raidImageElement, debugCanvasElement = null) {
         }
     }
 
-    return { results, dCtx };
+    // Return the bounds info along with the findings so app.js can use it
+    return { results, dCtx, bounds };
 }
