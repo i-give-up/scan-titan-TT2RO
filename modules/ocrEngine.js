@@ -104,19 +104,20 @@ export async function parseRaidImage(raidImgElement, bounds) {
     nameCanvas.width = nameCropW; nameCanvas.height = nameCropH;
     nameCanvas.getContext('2d').drawImage(raidImgElement, nameCropX, nameCropY, nameCropW, nameCropH, 0, 0, nameCropW, nameCropH);
 
-    // Morale Crop Box Alignment
+    // 1. WIDEN THE WINDOW: Create a tall, safe tracking zone (Y: 0.54 to 0.66) 
+    // This ensures that even if the row moves up or down, it will always be caught inside this box.
     const moraleCropX = Math.round(0.05 * raidImgElement.naturalWidth);
-    const moraleCropY = Math.round(0.575 * bounds.height) + bounds.top; 
+    const moraleCropY = Math.round(0.54 * bounds.height) + bounds.top; 
     const moraleCropW = Math.round(0.90 * raidImgElement.naturalWidth);
-    const moraleCropH = Math.round(0.045 * bounds.height); // Slightly thinner to isolate just the banner line
-
+    const moraleCropH = Math.round(0.12 * bounds.height); // Made 3x taller to catch the whole zone!
+    
     const moraleCanvas = document.createElement('canvas');
     moraleCanvas.width = moraleCropW; moraleCanvas.height = moraleCropH;
     moraleCanvas.getContext('2d').drawImage(raidImgElement, moraleCropX, moraleCropY, moraleCropW, moraleCropH, 0, 0, moraleCropW, moraleCropH);
 
     // Run parallel OCR loops
     const rawTopText = await processCrop(nameCanvas);
-    const rawMoraleText = await processCrop(moraleCanvas, 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789.+% ');
+    const rawMoraleText = await processCrop(moraleCanvas);
     const partHealthPools = await parsePartHealthPools(raidImgElement, bounds);
 
     // There are 8 possible Titan Lords in a clan raid + tokens for partial matching
@@ -146,11 +147,20 @@ export async function parseRaidImage(raidImgElement, bounds) {
         }
     }
 
-    // 3. Extract Morale Value
-    console.log(rawMoraleText);
-    const moraleRegex = /Build\s+Morale\s+Active\s+\+?([0-9.]+)%/i;
+    // 3. ROBUST REGEX PARSING: Extract the value out of the text mass
+    // This looks for anything resembling "Morale", "Active", or "Bonus", then grabs the nearby numbers and percent sign
+    const moraleRegex = /(?:morale|active|bonus)[^0-9]*\+?\s*([0-9.]+)\s*%/i;
     const moraleMatch = rawMoraleText.match(moraleRegex);
-    const moraleValue = moraleMatch ? `${moraleMatch[1]}%` : "Not Found";
+    let moraleValue = "Not Found";
+    
+    if (moraleMatch) {
+        moraleValue = `${moraleMatch[1]}%`;
+    } else {
+        // Fallback: If "Morale" keyword was garbled, just look for any isolated percentage number inside the wide box
+        const secondaryRegex = /([0-9.]+)\s*%/;
+        const fallbackMatch = rawMoraleText.match(secondaryRegex);
+        if (fallbackMatch) moraleValue = `${fallbackMatch[1]}%`;
+    }
 
     return {
         titanLordName: titanLordName,
