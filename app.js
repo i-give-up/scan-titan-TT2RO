@@ -72,28 +72,27 @@ matchBtn.addEventListener('click', async () => {
         const analysisOutput = analyzeTitanParts(raidPreview, debugCanvas);
         const visualPartStates = analysisOutput.results;
         const dCtx = analysisOutput.dCtx;
+        const bounds = analysisOutput.bounds; // Capture the bounding data parameters
 
         // Draw the OCR text tracking regions over the calibration interface screen matrix
         if (dCtx) {
             const w = raidPreview.naturalWidth;
-            const h = raidPreview.naturalHeight;
-            dCtx.strokeStyle = '#2ea44f'; // Green bounding blocks
+            dCtx.strokeStyle = '#2ea44f';
             dCtx.lineWidth = Math.max(4, w * 0.003);
-
-            // Outline Name Scan Window
-            dCtx.strokeRect(Math.round(0.20 * w), Math.round(0.12 * h), Math.round(0.60 * w), Math.round(0.05 * h));
-            dCtx.fillStyle = '#2ea44f';
-            dCtx.font = `bold ${Math.max(14, w * 0.012)}px monospace`;
-            dCtx.fillText("[OCR Zone: Name]", Math.round(0.20 * w), Math.round(0.12 * h) - 6);
-
-            // Outline Morale Row Window
-            dCtx.strokeRect(Math.round(0.05 * w), Math.round(0.70 * h), Math.round(0.90 * w), Math.round(0.06 * h));
-            dCtx.fillText("[OCR Zone: Morale]", Math.round(0.05 * w), Math.round(0.70 * h) - 6);
+        
+            // Draw the green boxes shifted to match the content boundaries
+            const nameY = Math.round(0.20 * bounds.height) + bounds.top;
+            const nameH = Math.round(0.035 * bounds.height);
+            dCtx.strokeRect(Math.round(0.15 * w), nameY, Math.round(0.70 * w), nameH);
+            
+            const moraleY = Math.round(0.70 * bounds.height) + bounds.top;
+            const moraleH = Math.round(0.06 * bounds.height);
+            dCtx.strokeRect(Math.round(0.05 * w), moraleY, Math.round(0.90 * w), moraleH);
         }
 
         statusText.textContent = "⏳ Phase 2: Running OCR text mapping on Raid metrics...";
         // 2. OCR Scan on Raid Image (Name, Morale & Health Numbers)
-        const raidOcrResults = await parseRaidImage(raidPreview);
+        const raidOcrResults = await parseRaidImage(raidPreview, bounds);
         const titanName = raidOcrResults.titanLordName || "Unknown Titan";
 
         statusText.textContent = `⏳ Phase 3: Merging data blocks and parsing targeted metrics for ${titanName}...`;
