@@ -168,6 +168,10 @@ export async function parseInfoImage(infoImgElement, targetTitanName) {
     fullCanvas.height = infoImgElement.naturalHeight;
     fullCanvas.getContext('2d').drawImage(infoImgElement, 0, 0);
 
+    const fullText = await processCrop(fullCanvas);
+    const lines = fullText.split('\n').map(line => line.trim()).filter(Boolean);
+
+
     let raidBonus = "Not Found";
     let stats = {
         body: { head: "N/A", torso: "N/A", arms: "N/A", legs: "N/A" },
