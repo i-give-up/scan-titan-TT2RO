@@ -93,16 +93,36 @@ export async function parsePartHealthPools(raidImgElement) {
  * 1 & 3. Processes raid.jpg to extract Titan Name, Build Morale value, and Part Health Pools
  */
 export async function parseRaidImage(raidImgElement) {
-    // const nameCrop = createCropCanvas(raidImgElement, 0.20, 0.12, 0.60, 0.05);
-    const nameCrop = createCropCanvas(raidImgElement, 0.20, 0.155, 0.60, 0.035);
+    // Captures a thin, full-width window (X: 10% to 90%) right where the master HP row sits
+    const nameAndHpCrop = createCropCanvas(raidImgElement, 0.10, 0.175, 0.80, 0.04);
     const moraleCrop = createCropCanvas(raidImgElement, 0.05, 0.70, 0.90, 0.06);
-
-    const rawNameText = await processCrop(nameCrop, 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ ');
+    
+    // Use a loose alphanumeric whitelist to catch letters, numbers, and decimals cleanly
+    const rawNameHpText = await processCrop(nameAndHpCrop, 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789.,+%/ ');
     const rawMoraleText = await processCrop(moraleCrop, 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789.+% ');
     
     // Call the new tracking health sweep
     const partHealthPools = await parsePartHealthPools(raidImgElement);
 
+    // Parsing Name from Master HP string e.g. "Klonk the Illuminator 3.36B HP" or "Mohaca 450.25M HP"
+    let titanLordName = "Unknown Titan";
+    // Replace multiple consecutive space characters with a single space character
+    const cleanedLine = rawNameHpText.trim().replace(/\s+/g, ' ');
+
+    // Match patterns ending in HP, optionally preceded by game scale indicators (M, B, K) e.g. "3.36B HP"
+    const hpSplitRegex = /\s*\+?[0-9.,]+\s*[MBKmbk]?\s*HP/i;
+    
+    if (hpSplitRegex.test(cleanedLine)) {
+        // Split the line at the HP match; everything to the left is the Titan Name
+        const components = cleanedLine.split(hpSplitRegex);
+        if (components[0] && components[0].trim().length > 0) {
+            titanLordName = components[0].trim();
+        }
+    } else {
+        // Fallback: If "HP" text failed to read, strip any trailing numbers/symbols to preserve name
+        titanLordName = cleanedLine.replace(/[0-9.,+%/]+[MBKmbk]?\s*\$/i, '').trim();
+    }
+    
     const moraleRegex = /Build\s+Morale\s+Active\s+\+?([0-9.]+)%/i;
     const moraleMatch = rawMoraleText.match(moraleRegex);
     const moraleValue = moraleMatch ? `${moraleMatch[1]}%` : "Not Found";
