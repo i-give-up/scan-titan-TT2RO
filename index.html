@@ -65,7 +65,7 @@
                 }
                 
                 // Confirm the foundational C++ constructors (like Mat) are compiled and alive
-                if (window.cv && window.cv.Mat && window.onOpenCvReady === 'function') {
+                if (window.cv && window.cv.Mat && typeof window.onOpenCvReady === 'function') {
                     clearInterval(checkOpenCV);
                     console.log("OpenCV.js Engine is fully compiled!");
                     window.onOpenCvReady();
