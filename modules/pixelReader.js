@@ -6,14 +6,14 @@
 // Normalized anchors mapping the location of each part.
 // Shifted to the absolute far-left edge (~1-2% into the bar asset) to catch 2% HP remaining.
 const TITAN_PART_ANCHORS = {
-    head:           { bar: { x: 0.41, y: 0.28 }, box: { x: 0.50, y: 0.32 } }, 
-    leftShoulder:   { bar: { x: 0.23, y: 0.30 }, box: { x: 0.30, y: 0.34 } }, 
-    rightShoulder:  { bar: { x: 0.59, y: 0.30 }, box: { x: 0.70, y: 0.34 } }, 
-    leftArm:        { bar: { x: 0.17, y: 0.38 }, box: { x: 0.30, y: 0.42 } }, 
-    rightArm:       { bar: { x: 0.66, y: 0.38 }, box: { x: 0.70, y: 0.42 } }, 
-    torso:          { bar: { x: 0.41, y: 0.36 }, box: { x: 0.50, y: 0.40 } }, 
-    leftLeg:        { bar: { x: 0.33, y: 0.46 }, box: { x: 0.40, y: 0.48 } }, 
-    rightLeg:       { bar: { x: 0.53, y: 0.46 }, box: { x: 0.60, y: 0.48 } }  
+    head:           { bar: { x: 0.40, y: 0.170 }, box: { x: 0.50, y: 0.225 } }, 
+    leftShoulder:   { bar: { x: 0.19, y: 0.205 }, box: { x: 0.26, y: 0.260 } }, 
+    rightShoulder:  { bar: { x: 0.61, y: 0.205 }, box: { x: 0.74, y: 0.260 } }, 
+    leftArm:        { bar: { x: 0.11, y: 0.315 }, box: { x: 0.18, y: 0.370 } }, 
+    rightArm:       { bar: { x: 0.69, y: 0.315 }, box: { x: 0.82, y: 0.370 } }, 
+    torso:          { bar: { x: 0.40, y: 0.300 }, box: { x: 0.50, y: 0.355 } }, 
+    leftLeg:        { bar: { x: 0.27, y: 0.465 }, box: { x: 0.35, y: 0.520 } }, 
+    rightLeg:       { bar: { x: 0.53, y: 0.465 }, box: { x: 0.65, y: 0.520 } }  
 };
 
 /**
