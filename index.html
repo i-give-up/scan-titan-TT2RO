@@ -38,22 +38,37 @@
 
 <!-- Load Tesseract.js for browser-based Optical Character Recognition -->
 <script src='https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js'></script>
+    
+<!-- Load the Techstark CORS-compliant variant of OpenCV.js for canvas manipulation tasks -->
+<script async src="https://cdn.jsdelivr.net/npm/@techstark/opencv-js@5.0.0-release.1/dist/opencv.min.js" type="text/javascript"></script>
 
-<!-- Securely handle internal WebAssembly Runtime for OpenCV.js -->
+<!-- Polling Engine to detect when the async WebAssembly finishes unpacking -->
 <script type="text/javascript">
-    // Emscripten hook that catches the precise moment OpenCV assembly finishes layout compiling
-    var Module = {
-        onRuntimeInitialized: function() {
-            // Safe to let the UI know inputs are unblocked
-            if (typeof window.onOpenCvReady === 'function') {
-                window.onOpenCvReady();
+    const checkOpenCV = setInterval(async () => {
+        // Confirm the global variable namespace exists on the window object
+        if (window.cv) {
+            try {
+                // If cv is wrapped as a Promise inside the bundle, resolve it cleanly
+                if (window.cv instanceof Promise) {
+                    window.cv = await window.cv;
+                }
+                
+                // Confirm the foundational C++ constructors (like Mat) are compiled and alive
+                if (window.cv && window.cv.Mat) {
+                    clearInterval(checkOpenCV);
+                    console.log("OpenCV.js Engine is fully compiled!");
+                    
+                    // Fire the callback method inside your app.js orchestrator
+                    if (typeof window.onOpenCvReady === 'function') {
+                        window.onOpenCvReady();
+                    }
+                }
+            } catch (e) {
+                console.log("Waiting for WebAssembly compilation...", e);
             }
         }
-    };
+    }, 200); // Polls every 200ms
 </script>
-    
-<!-- Load OpenCV.js from official mirrors for canvas manipulation tasks -->
-<script async src="https://cdn.jsdelivr.net/npm/@techstark/opencv-js@5.0.0-release.1/dist/opencv.min.js" type="text/javascript"></script>
 
 <!-- Load your application code explicitly as an ES Module to support internal system imports -->
 <script src="app.js" type="module" defer></script>
