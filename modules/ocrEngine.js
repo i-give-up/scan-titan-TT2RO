@@ -93,7 +93,7 @@ async function parsePartHealthPools(raidImgElement, bounds) {
  * @param {HTMLImageElement} raidImgElement 
  * @param {Object} bounds - The content bounds returned from pixelReader.js
  */
-export async function parseRaidImage(raidImgElement) {
+export async function parseRaidImage(raidImgElement, bounds) {
     // Captures a thin, full-width window (X: 10% to 90%) right where the master HP row sits
     // Crop coordinates map cleanly relative to the true gameplay height window
     const nameCropX = Math.round(0.15 * raidImgElement.naturalWidth);
