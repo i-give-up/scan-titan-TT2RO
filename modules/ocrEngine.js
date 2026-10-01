@@ -128,7 +128,7 @@ export async function parseRaidImage(raidImgElement) {
     const moraleValue = moraleMatch ? `${moraleMatch[1]}%` : "Not Found";
 
     return {
-        titanLordName: rawNameText.trim().replace(/\s+/g, ' '),
+        titanLordName: titanLordName,
         moraleBonus: moraleValue,
         partHealthPools: partHealthPools // Merged health pool array
     };
