@@ -133,6 +133,7 @@ export async function parseRaidImage(raidImgElement, bounds) {
 
     let titanLordName = "Unknown Titan";
     const normalizedScannedText = rawTopText.toLowerCase();
+    console.log(normalizedScannedText);
 
     // Check if any registry keyword exists anywhere inside our raw text sweep
     for (const officialName of TITAN_LORDS_REGISTRY) {
