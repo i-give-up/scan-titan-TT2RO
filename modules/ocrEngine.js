@@ -147,6 +147,7 @@ export async function parseRaidImage(raidImgElement, bounds) {
         }
     }
 
+    console.log('rawMoraleText: ', rawMoraleText);
     // 3. ROBUST REGEX PARSING: Extract the value out of the text mass
     // This looks for anything resembling "Morale", "Active", or "Bonus", then grabs the nearby numbers and percent sign
     const moraleRegex = /(?:morale|active|bonus)[^0-9]*\+?\s*([0-9.]+)\s*%/i;
