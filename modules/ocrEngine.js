@@ -54,14 +54,14 @@ async function parsePartHealthPools(raidImgElement, bounds) {
     // Centered directly on the health bar rectangles.
     // The 'x' spans across the bar's full width, and 'y' hits the exact vertical center-line.
     const PART_HEALTH_TEXT_CROPS = {
-        head:           { x: 0.38, y: 0.170, w: 0.24, h: 0.032 },
-        leftShoulder:   { x: 0.16, y: 0.205, w: 0.22, h: 0.032 },
-        rightShoulder:  { x: 0.62, y: 0.205, w: 0.22, h: 0.032 },
-        leftArm:        { x: 0.08, y: 0.315, w: 0.22, h: 0.032 },
-        rightArm:       { x: 0.70, y: 0.315, w: 0.22, h: 0.032 },
-        torso:          { x: 0.38, y: 0.300, w: 0.24, h: 0.032 },
-        leftLeg:        { x: 0.24, y: 0.465, w: 0.22, h: 0.032 },
-        rightLeg:       { x: 0.54, y: 0.465, w: 0.22, h: 0.032 }
+        head:           { x: 0.38, y: 0.315, w: 0.22, h: 0.030 },
+        leftShoulder:   { x: 0.18, y: 0.310, w: 0.20, h: 0.030 },
+        rightShoulder:  { x: 0.62, y: 0.310, w: 0.20, h: 0.030 },
+        leftArm:        { x: 0.18, y: 0.380, w: 0.20, h: 0.030 },
+        rightArm:       { x: 0.62, y: 0.380, w: 0.20, h: 0.030 },
+        torso:          { x: 0.38, y: 0.395, w: 0.22, h: 0.030 },
+        leftLeg:        { x: 0.30, y: 0.470, w: 0.20, h: 0.030 },
+        rightLeg:       { x: 0.50, y: 0.470, w: 0.20, h: 0.030 }
     };
 
     const healthPools = {};
