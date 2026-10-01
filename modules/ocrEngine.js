@@ -119,28 +119,29 @@ export async function parseRaidImage(raidImgElement, bounds) {
     const rawMoraleText = await processCrop(moraleCanvas, 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789.+% ');
     const partHealthPools = await parsePartHealthPools(raidImgElement, bounds);
 
-    // There are 8 possible Titan Lords in a clan raid
+    // There are 8 possible Titan Lords in a clan raid + tokens for partial matching
     const TITAN_LORDS_REGISTRY = [
-        "Lojak the Fissure",
-        "Takedar the Reborn",
-        "Jukk the Overseer",
-        "Sterl the Unmaker",
-        "Mohaca the Gale",
-        "Terro the Seeker",
-        "Klonk the Illuminator",
-        "Priker the Otherworldly"
+        { officialName: "Lojak the Fissure", tokens: ["loja", "ojak", "fiss", "ssur"] },
+        { officialName: "Takedar the Reborn", tokens: ["take", "keda", "rebo", "born"] },
+        { officialName: "Jukk the Overseer", tokens: ["jukk", "over", "seer"] },
+        { officialName: "Sterl the Unmaker", tokens: ["ster", "unma", "make"] },
+        { officialName: "Mohaca the Gale", tokens: ["moha", "haca", "gale"] },
+        { officialName: "Terro the Seeker", tokens: ["terr", "erro", "seek"] },
+        { officialName: "Klonk the Illuminator", tokens: ["klon", "lonk", "illu", "umin"] },
+        { officialName: "Priker the Otherworldly", tokens: ["prik", "rike", "othe", "worl"] }
     ];
 
     let titanLordName = "Unknown Titan";
-    const normalizedScannedText = rawTopText.toLowerCase();
+    // Strip punctuation and normalize string to protect against spacing bugs
+    const normalizedScannedText = rawTopText.toLowerCase().replace(/[^a-z0-9]/g, '');
     console.log(normalizedScannedText);
 
-    // Check if any registry keyword exists anywhere inside our raw text sweep
-    for (const officialName of TITAN_LORDS_REGISTRY) {
-        // Splitting or matching the primary token (e.g. matching "klonk") handles fuzzy text around it
-        const firstToken = officialName.toLowerCase().split(" ")[0]; 
-        if (normalizedScannedText.includes(firstToken)) {
-            titanLordName = officialName; // Force snap to the clean official string spelling
+    // Search text for registry signatures
+    for (const lord of TITAN_LORDS_REGISTRY) {
+        // If any token matches a clean segment inside the scanned output, resolve the profile name
+        const matchFound = lord.tokens.some(token => normalizedScannedText.includes(token));
+        if (matchFound) {
+            titanLordName = lord.officialName; // Force snap to clean official string formatting!
             break;
         }
     }
