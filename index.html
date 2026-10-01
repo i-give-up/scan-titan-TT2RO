@@ -39,8 +39,21 @@
 <!-- Load Tesseract.js for browser-based Optical Character Recognition -->
 <script src='https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js'></script>
 
+<!-- Securely handle internal WebAssembly Runtime for OpenCV.js -->
+<script type="text/javascript">
+    // Emscripten hook that catches the precise moment OpenCV assembly finishes layout compiling
+    var Module = {
+        onRuntimeInitialized: function() {
+            // Safe to let the UI know inputs are unblocked
+            if (typeof window.onOpenCvReady === 'function') {
+                window.onOpenCvReady();
+            }
+        }
+    };
+</script>
+    
 <!-- Load OpenCV.js from official mirrors for canvas manipulation tasks -->
-<script async src="https://docs.opencv.org/5.0/opencv.js" onload="window.onOpenCvReady();" type="text/javascript"></script>
+<script async src="https://docs.opencv.org/5.0/opencv.js" type="text/javascript"></script>
 
 <!-- Load your application code explicitly as an ES Module to support internal system imports -->
 <script src="app.js" type="module" defer></script>
