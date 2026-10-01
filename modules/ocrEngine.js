@@ -93,7 +93,8 @@ export async function parsePartHealthPools(raidImgElement) {
  * 1 & 3. Processes raid.jpg to extract Titan Name, Build Morale value, and Part Health Pools
  */
 export async function parseRaidImage(raidImgElement) {
-    const nameCrop = createCropCanvas(raidImgElement, 0.20, 0.12, 0.60, 0.05);
+    // const nameCrop = createCropCanvas(raidImgElement, 0.20, 0.12, 0.60, 0.05);
+    const nameCrop = createCropCanvas(raidImgElement, 0.20, 0.155, 0.60, 0.035);
     const moraleCrop = createCropCanvas(raidImgElement, 0.05, 0.70, 0.90, 0.06);
 
     const rawNameText = await processCrop(nameCrop, 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ ');
