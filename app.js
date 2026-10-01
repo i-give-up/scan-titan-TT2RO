@@ -85,9 +85,12 @@ matchBtn.addEventListener('click', async () => {
             const nameH = Math.round(0.15 * bounds.height);             // Match the 0.15 height frame
             dCtx.strokeRect(Math.round(0.05 * w), nameY, Math.round(0.90 * w), nameH);
             
-            const moraleY = Math.round(0.70 * bounds.height) + bounds.top;
-            const moraleH = Math.round(0.06 * bounds.height);
+            const moraleY = Math.round(0.35 * bounds.height) + bounds.top;
+            const moraleH = Math.round(0.40 * bounds.height);
+            dCtx.strokeStyle = '#2ea44f';
             dCtx.strokeRect(Math.round(0.05 * w), moraleY, Math.round(0.90 * w), moraleH);
+            dCtx.fillStyle = '#2ea44f';
+            dCtx.fillText("[OCR Zone: Full Center Morale Sweep]", Math.round(0.05 * w), moraleY - 6);
         }
 
         statusText.textContent = "⏳ Phase 2: Running OCR text mapping on Raid metrics...";
