@@ -174,7 +174,7 @@ export function analyzeTitanParts(raidImageElement, debugCanvasElement = null) {
     let dCtx = null;
     if (debugCanvasElement) {
         debugCanvasElement.width = width;
-        debugCanvasElement.height = height;
+        debugCanvasElement.height = rawHeight;
         dCtx = debugCanvasElement.getContext('2d');
         dCtx.drawImage(raidImageElement, 0, 0);
     }
