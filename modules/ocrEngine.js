@@ -52,16 +52,17 @@ function createCropCanvas(imgElement, startXPct, startYPct, widthPct, heightPct)
  */
 async function parsePartHealthPools(raidImgElement, bounds) {
     // Centered directly on the health bar rectangles.
-    // The 'x' spans across the bar's full width, and 'y' hits the exact vertical center-line.
+    // 'x' = left edge of health bar rectangle
+    // 'y' = vertical center of health bar rectangle
     const PART_HEALTH_TEXT_CROPS = {
         head:           { x: 0.420, y: 0.273, w: 0.14, h: 0.016 },
-        leftShoulder:   { x: 0.18, y: 0.310, w: 0.20, h: 0.030 },
-        rightShoulder:  { x: 0.62, y: 0.310, w: 0.20, h: 0.030 },
-        leftArm:        { x: 0.18, y: 0.380, w: 0.20, h: 0.030 },
-        rightArm:       { x: 0.62, y: 0.380, w: 0.20, h: 0.030 },
-        torso:          { x: 0.39, y: 0.395, w: 0.22, h: 0.030 },
-        leftLeg:        { x: 0.31, y: 0.470, w: 0.20, h: 0.030 },
-        rightLeg:       { x: 0.49, y: 0.470, w: 0.20, h: 0.030 }
+        leftShoulder:   { x: 0.245, y: 0.292, w: 0.14, h: 0.016 },
+        rightShoulder:  { x: 0.607, y: 0.290, w: 0.14, h: 0.016 },
+        leftArm:        { x: 0.243, y: 0.376, w: 0.14, h: 0.016 },
+        rightArm:       { x: 0.605, y: 0.378, w: 0.14, h: 0.016 },
+        torso:          { x: 0.423, y: 0.358, w: 0.14, h: 0.016 },
+        leftLeg:        { x: 0.348, y: 0.438, w: 0.14, h: 0.016 },
+        rightLeg:       { x: 0.505, y: 0.435, w: 0.14, h: 0.016 }
     };
 
     const healthPools = {};
