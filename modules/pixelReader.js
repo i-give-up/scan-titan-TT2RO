@@ -119,6 +119,16 @@ export function analyzeTitanParts(raidImageElement) {
     const height = canvas.height;
     const results = {};
 
+    // Setup visual debug drawing if requested
+    // dCtx = debug context
+    let dCtx = null;
+    if (debugCanvasElement) {
+        debugCanvasElement.width = width;
+        debugCanvasElement.height = height;
+        dCtx = debugCanvasElement.getContext('2d');
+        dCtx.drawImage(raidImageElement, 0, 0);
+    }
+
     for (const [partName, anchors] of Object.entries(TITAN_PART_ANCHORS)) {
         // Calculate absolute pixel coordinates from normalized anchor definitions
         const barX = Math.round(anchors.bar.x * width);
@@ -139,7 +149,27 @@ export function analyzeTitanParts(raidImageElement) {
             layer: layer,
             action: isIgnored ? "Ignore (X)" : "Target/Attack"
         };
+
+        // Draw targets onto the debug interface
+        if (dCtx) {
+            // Draw color sample target dot (Red fill)
+            dCtx.fillStyle = '#ff0000';
+            dCtx.beginPath();
+            dCtx.arc(barX, barY, Math.max(6, width * 0.005), 0, 2 * Math.PI);
+            dCtx.fill();
+
+            // Draw strategy outline box (Blue square)
+            dCtx.strokeStyle = '#0066ff';
+            dCtx.lineWidth = Math.max(3, width * 0.003);
+            const radius = 12; // matching standard boxRadius
+            dCtx.strokeRect(boxX - radius, boxY - radius, radius * 2, radius * 2);
+            
+            // Draw text identifier labels over elements
+            dCtx.fillStyle = '#000';
+            dCtx.font = `bold ${Math.max(14, width * 0.012)}px monospace`;
+            dCtx.fillText(partName, boxX - radius, boxY - radius - 5);
+        }
     }
 
-    return results;
+    return { results, dCtx };
 }
