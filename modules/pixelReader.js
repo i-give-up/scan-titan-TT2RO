@@ -8,12 +8,12 @@
 const TITAN_PART_ANCHORS = {
     head:           { bar: { x: 0.423, y: 0.273 }, box: { x: 0.495, y: 0.297 } }, 
     leftShoulder:   { bar: { x: 0.245, y: 0.292 }, box: { x: 0.311, y: 0.315 } }, 
-    rightShoulder:  { bar: { x: 0.655, y: 0.310 }, box: { x: 0.718, y: 0.345 } }, 
-    leftArm:        { bar: { x: 0.200, y: 0.380 }, box: { x: 0.282, y: 0.415 } }, 
-    rightArm:       { bar: { x: 0.665, y: 0.380 }, box: { x: 0.718, y: 0.415 } }, 
-    torso:          { bar: { x: 0.460, y: 0.395 }, box: { x: 0.500, y: 0.412 } }, 
-    leftLeg:        { bar: { x: 0.360, y: 0.470 }, box: { x: 0.418, y: 0.478 } }, 
-    rightLeg:       { bar: { x: 0.535, y: 0.470 }, box: { x: 0.582, y: 0.478 } }  
+    rightShoulder:  { bar: { x: 0.607, y: 0.290 }, box: { x: 0.666, y: 0.315 } }, 
+    leftArm:        { bar: { x: 0.243, y: 0.376 }, box: { x: 0.311, y: 0.407 } }, 
+    rightArm:       { bar: { x: 0.605, y: 0.377 }, box: { x: 0.666, y: 0.407 } }, 
+    torso:          { bar: { x: 0.423, y: 0.357 }, box: { x: 0.495, y: 0.386 } }, 
+    leftLeg:        { bar: { x: 0.348, y: 0.437 }, box: { x: 0.416, y: 0.461 } }, 
+    rightLeg:       { bar: { x: 0.505, y: 0.435 }, box: { x: 0.582, y: 0.461 } }  
 };
 
 /**
