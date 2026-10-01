@@ -106,9 +106,9 @@ export async function parseRaidImage(raidImgElement, bounds) {
 
     // Morale Crop Box Alignment
     const moraleCropX = Math.round(0.05 * raidImgElement.naturalWidth);
-    const moraleCropY = Math.round(0.70 * bounds.height) + bounds.top;
+    const moraleCropY = Math.round(0.575 * bounds.height) + bounds.top; 
     const moraleCropW = Math.round(0.90 * raidImgElement.naturalWidth);
-    const moraleCropH = Math.round(0.06 * bounds.height);
+    const moraleCropH = Math.round(0.045 * bounds.height); // Slightly thinner to isolate just the banner line
 
     const moraleCanvas = document.createElement('canvas');
     moraleCanvas.width = moraleCropW; moraleCanvas.height = moraleCropH;
