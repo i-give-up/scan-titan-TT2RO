@@ -51,33 +51,49 @@ function createCropCanvas(imgElement, startXPct, startYPct, widthPct, heightPct)
  * @returns {Promise<Object>} Map of parts to their scanned health strings (e.g., { head: "3.96B" })
  */
 async function parsePartHealthPools(raidImgElement, bounds) {
-    // Normalized center bounding regions for where the health text overlays on the screen.
-    // These are slightly wider and offset from the pure left-edge bar markers to capture the full string (e.g., "65.38M").
+    // Centered directly on the health bar rectangles.
+    // The 'x' spans across the bar's full width, and 'y' hits the exact vertical center-line.
     const PART_HEALTH_TEXT_CROPS = {
-        head:           { x: 0.38, y: 0.25, w: 0.24, h: 0.03 },
-        leftShoulder:   { x: 0.18, y: 0.27, w: 0.22, h: 0.03 },
-        rightShoulder:  { x: 0.60, y: 0.27, w: 0.22, h: 0.03 },
-        leftArm:        { x: 0.12, y: 0.35, w: 0.22, h: 0.03 },
-        rightArm:       { x: 0.66, y: 0.35, w: 0.22, h: 0.03 },
-        torso:          { x: 0.38, y: 0.33, w: 0.24, h: 0.03 },
-        leftLeg:        { x: 0.28, y: 0.43, w: 0.22, h: 0.03 },
-        rightLeg:       { x: 0.50, y: 0.43, w: 0.22, h: 0.03 }
+        head:           { x: 0.38, y: 0.170, w: 0.24, h: 0.032 },
+        leftShoulder:   { x: 0.16, y: 0.205, w: 0.22, h: 0.032 },
+        rightShoulder:  { x: 0.62, y: 0.205, w: 0.22, h: 0.032 },
+        leftArm:        { x: 0.08, y: 0.315, w: 0.22, h: 0.032 },
+        rightArm:       { x: 0.70, y: 0.315, w: 0.22, h: 0.032 },
+        torso:          { x: 0.38, y: 0.300, w: 0.24, h: 0.032 },
+        leftLeg:        { x: 0.24, y: 0.465, w: 0.22, h: 0.032 },
+        rightLeg:       { x: 0.54, y: 0.465, w: 0.22, h: 0.032 }
     };
 
     const healthPools = {};
+    // Locate the canvas drawing loop inside parsePartHealthPools inside modules/ocrEngine.js and match this structure:
     for (const [partName, cropMap] of Object.entries(PART_HEALTH_TEXT_CROPS)) {
         const cX = Math.round(cropMap.x * raidImgElement.naturalWidth);
-        const cY = Math.round(cropMap.y * bounds.height) + bounds.top; // Balanced shifting
+        const cY = Math.round((cropMap.y * bounds.height) + bounds.top - (cropMap.h * bounds.height / 2));
         const cW = Math.round(cropMap.w * raidImgElement.naturalWidth);
         const cH = Math.round(cropMap.h * bounds.height);
-
+    
         const textCrop = document.createElement('canvas');
         textCrop.width = cW; textCrop.height = cH;
-        textCrop.getContext('2d').drawImage(raidImgElement, cX, cY, cW, cH, 0, 0, cW, cH);
+        const tCtx = textCrop.getContext('2d');
+        tCtx.drawImage(raidImgElement, cX, cY, cW, cH, 0, 0, cW, cH);
         
+        // Threshold Filtering (Converts text overlays to high-contrast black/white) ---
+        const imgData = tCtx.getImageData(0, 0, cW, cH);
+        const d = imgData.data;
+        for (let i = 0; i < d.length; i += 4) {
+            // Calculate basic pixel brightness luminance
+            const brightness = (d[i] * 0.299 + d[i+1] * 0.587 + d[i+2] * 0.114);
+            // The game text is bright white/light silver. 
+            // Force text pixels to solid white, and the background bar to solid black.
+            const colorVal = brightness > 160 ? 255 : 0;
+            d[i] = d[i+1] = d[i+2] = colorVal;
+        }
+        tCtx.putImageData(imgData, 0, 0);
+        
+        // Pass the cleaned high-contrast image matrix to Tesseract
         const rawText = await processCrop(textCrop, '0123456789.MBKmbk');
         let cleanText = rawText.trim().toUpperCase().replace(/\s+/g, '');
-        const validMetricRegex = /^[0-9]+(\.[0-9]+)?[MBK]?\$/;
+        const validMetricRegex = /^[0-9]+(\.[0-9]+)?[MBK]?$/;
         
         if (!cleanText || !validMetricRegex.test(cleanText)) {
             healthPools[partName] = "Missing Bar / Skeleton";
