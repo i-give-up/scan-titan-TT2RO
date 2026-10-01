@@ -107,9 +107,9 @@ export async function parseRaidImage(raidImgElement, bounds) {
     // 1. WIDEN THE WINDOW: Create a tall, safe tracking zone (Y: 0.54 to 0.66) 
     // This ensures that even if the row moves up or down, it will always be caught inside this box.
     const moraleCropX = Math.round(0.05 * raidImgElement.naturalWidth);
-    const moraleCropY = Math.round(0.54 * bounds.height) + bounds.top; 
+    const moraleCropY = Math.round(0.40 * bounds.height) + bounds.top; 
     const moraleCropW = Math.round(0.90 * raidImgElement.naturalWidth);
-    const moraleCropH = Math.round(0.12 * bounds.height); // Made 3x taller to catch the whole zone!
+    const moraleCropH = Math.round(0.13 * bounds.height); // Made tall enough to cleanly encapsulate the row
     
     const moraleCanvas = document.createElement('canvas');
     moraleCanvas.width = moraleCropW; moraleCanvas.height = moraleCropH;
