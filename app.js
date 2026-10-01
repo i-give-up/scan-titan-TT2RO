@@ -12,9 +12,11 @@ const sceneInput = document.getElementById('sceneInput'); // raid.jpg
 const templateInput = document.getElementById('templateInput'); // info.jpg
 const matchBtn = document.getElementById('matchBtn');
 
-// Previews
+// Previews & Visual Debug Elements
 const raidPreview = document.getElementById('scenePreview');
 const infoPreview = document.getElementById('templatePreview');
+const debugSection = document.getElementById('debugSection');
+const debugCanvas = document.getElementById('debugCanvas');
 const canvasContainer = document.querySelector('.canvas-container');
 
 /**
@@ -58,13 +60,36 @@ matchBtn.addEventListener('click', async () => {
     matchBtn.disabled = true;
     statusText.textContent = "⏳ Phase 1: Analyzing Titan color layers and action strategies...";
     statusText.style.color = "#0366d6";
-
+    
+    // Show the visual debug panel container immediately
+    debugSection.style.display = "block";
+    
     // Small delay to allow UI loading text thread to paint on slower devices
     await new Promise(resolve => setTimeout(resolve, 100));
 
     try {
-        // 1. Core Pixels Scan (Raid Image Health Layers & Checkboxes)
-        const visualPartStates = analyzeTitanParts(raidPreview);
+        // 1. Core Pixels Scan + Pass Debug Canvas Reference
+        const analysisOutput = analyzeTitanParts(raidPreview, debugCanvas);
+        const visualPartStates = analysisOutput.results;
+        const dCtx = analysisOutput.dCtx;
+
+        // Draw the OCR text tracking regions over the calibration interface screen matrix
+        if (dCtx) {
+            const w = raidPreview.naturalWidth;
+            const h = raidPreview.naturalHeight;
+            dCtx.strokeStyle = '#2ea44f'; // Green bounding blocks
+            dCtx.lineWidth = Math.max(4, w * 0.003);
+
+            // Outline Name Scan Window
+            dCtx.strokeRect(Math.round(0.20 * w), Math.round(0.12 * h), Math.round(0.60 * w), Math.round(0.05 * h));
+            dCtx.fillStyle = '#2ea44f';
+            dCtx.font = `bold ${Math.max(14, w * 0.012)}px monospace`;
+            dCtx.fillText("[OCR Zone: Name]", Math.round(0.20 * w), Math.round(0.12 * h) - 6);
+
+            // Outline Morale Row Window
+            dCtx.strokeRect(Math.round(0.05 * w), Math.round(0.70 * h), Math.round(0.90 * w), Math.round(0.06 * h));
+            dCtx.fillText("[OCR Zone: Morale]", Math.round(0.05 * w), Math.round(0.70 * h) - 6);
+        }
 
         statusText.textContent = "⏳ Phase 2: Running OCR text mapping on Raid metrics...";
         // 2. OCR Scan on Raid Image (Name, Morale & Health Numbers)
