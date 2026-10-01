@@ -19,36 +19,56 @@ const TITAN_PART_ANCHORS = {
 /**
  * Automatically detects the true top and bottom margins of the gameplay area
  * by scanning past solid black padding pixels.
+ * Requires a sequence of 5 consecutive rows of non-black pixel 
  */
 function findGameContentBounds(ctx, width, height) {
     let topBoundary = 0;
     let bottomBoundary = height;
+    const requiredRows = 5;
 
-    // 1. Scan from the top down to locate the first non-black pixel row
-    for (let y = 0; y < height; y++) {
-        // Sample a few horizontal points across the row to avoid false hits from stray pixels
-        const p1 = ctx.getImageData(Math.round(width * 0.25), y, 1, 1).data;
-        const p2 = ctx.getImageData(Math.round(width * 0.50), y, 1, 1).data;
-        const p3 = ctx.getImageData(Math.round(width * 0.75), y, 1, 1).data;
+    // 1. Scan from top down to locate the game's upper header edge
+    for (let y = 0; y < height - requiredRows; y++) {
+        let validConsecutiveRows = true;
+        for (let checkY = 0; checkY < requiredRows; checkY++) {
+            const currentY = y + checkY;
+            const p1 = ctx.getImageData(Math.round(width * 0.25), currentY, 1, 1).data;
+            const p2 = ctx.getImageData(Math.round(width * 0.50), currentY, 1, 1).data;
+            const p3 = ctx.getImageData(Math.round(width * 0.75), currentY, 1, 1).data;
 
-        // If any point is bright/colored (not near-black), we found the game content edge
-        if ((p1[0] > 15 || p1[1] > 15 || p1[2] > 15) ||
-            (p2[0] > 15 || p2[1] > 15 || p2[2] > 15) ||
-            (p3[0] > 15 || p3[1] > 15 || p3[2] > 15)) {
+            const isBlack = (p1[0] < 15 && p1[1] < 15 && p1[2] < 15) &&
+                            (p2[0] < 15 && p2[1] < 15 && p2[2] < 15) &&
+                            (p3[0] < 15 && p3[1] < 15 && p3[2] < 15);
+
+            if (isBlack) {
+                validConsecutiveRows = false;
+                break;
+            }
+        }
+        if (validConsecutiveRows) {
             topBoundary = y;
             break;
         }
     }
 
-    // 2. Scan from the bottom up to locate the lower padding edge
-    for (let y = height - 1; y >= 0; y--) {
-        const p1 = ctx.getImageData(Math.round(width * 0.25), y, 1, 1).data;
-        const p2 = ctx.getImageData(Math.round(width * 0.50), y, 1, 1).data;
-        const p3 = ctx.getImageData(Math.round(width * 0.75), y, 1, 1).data;
+    // 2. Scan from bottom up to locate the game's lower border edge
+    for (let y = height - 1; y >= requiredRows; y--) {
+        let validConsecutiveRows = true;
+        for (let checkY = 0; checkY < requiredRows; checkY++) {
+            const currentY = y - checkY;
+            const p1 = ctx.getImageData(Math.round(width * 0.25), currentY, 1, 1).data;
+            const p2 = ctx.getImageData(Math.round(width * 0.50), currentY, 1, 1).data;
+            const p3 = ctx.getImageData(Math.round(width * 0.75), currentY, 1, 1).data;
 
-        if ((p1[0] > 15 || p1[1] > 15 || p1[2] > 15) ||
-            (p2[0] > 15 || p2[1] > 15 || p2[2] > 15) ||
-            (p3[0] > 15 || p3[1] > 15 || p3[2] > 15)) {
+            const isBlack = (p1[0] < 15 && p1[1] < 15 && p1[2] < 15) &&
+                            (p2[0] < 15 && p2[1] < 15 && p2[2] < 15) &&
+                            (p3[0] < 15 && p3[1] < 15 && p3[2] < 15);
+
+            if (isBlack) {
+                validConsecutiveRows = false;
+                break;
+            }
+        }
+        if (validConsecutiveRows) {
             bottomBoundary = y;
             break;
         }
@@ -60,6 +80,7 @@ function findGameContentBounds(ctx, width, height) {
         height: bottomBoundary - topBoundary
     };
 }
+
 
 /**
  * Converts RGB values to HSL (Hue, Saturation, Lightness).
