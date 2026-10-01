@@ -45,39 +45,39 @@ function createCropCanvas(imgElement, startXPct, startYPct, widthPct, heightPct)
     return canvas;
 }
 
-// Normalized center bounding regions for where the health text overlays on the screen.
-// These are slightly wider and offset from the pure left-edge bar markers to capture the full string (e.g., "65.38M").
-const PART_HEALTH_TEXT_CROPS = {
-    head:           { x: 0.38, y: 0.25, w: 0.24, h: 0.03 },
-    leftShoulder:   { x: 0.18, y: 0.27, w: 0.22, h: 0.03 },
-    rightShoulder:  { x: 0.60, y: 0.27, w: 0.22, h: 0.03 },
-    leftArm:        { x: 0.12, y: 0.35, w: 0.22, h: 0.03 },
-    rightArm:       { x: 0.66, y: 0.35, w: 0.22, h: 0.03 },
-    torso:          { x: 0.38, y: 0.33, w: 0.24, h: 0.03 },
-    leftLeg:        { x: 0.28, y: 0.43, w: 0.22, h: 0.03 },
-    rightLeg:       { x: 0.50, y: 0.43, w: 0.22, h: 0.03 }
-};
-
 /**
  * Sweeps the 8 titan parts to extract remaining health string values.
  * @param {HTMLImageElement} raidImgElement - The uploaded raid screen
  * @returns {Promise<Object>} Map of parts to their scanned health strings (e.g., { head: "3.96B" })
  */
-export async function parsePartHealthPools(raidImgElement) {
-    const healthPools = {};
+async function parsePartHealthPools(raidImgElement, bounds) {
+    // Normalized center bounding regions for where the health text overlays on the screen.
+    // These are slightly wider and offset from the pure left-edge bar markers to capture the full string (e.g., "65.38M").
+    const PART_HEALTH_TEXT_CROPS = {
+        head:           { x: 0.38, y: 0.25, w: 0.24, h: 0.03 },
+        leftShoulder:   { x: 0.18, y: 0.27, w: 0.22, h: 0.03 },
+        rightShoulder:  { x: 0.60, y: 0.27, w: 0.22, h: 0.03 },
+        leftArm:        { x: 0.12, y: 0.35, w: 0.22, h: 0.03 },
+        rightArm:       { x: 0.66, y: 0.35, w: 0.22, h: 0.03 },
+        torso:          { x: 0.38, y: 0.33, w: 0.24, h: 0.03 },
+        leftLeg:        { x: 0.28, y: 0.43, w: 0.22, h: 0.03 },
+        rightLeg:       { x: 0.50, y: 0.43, w: 0.22, h: 0.03 }
+    };
 
+    const healthPools = {};
     for (const [partName, cropMap] of Object.entries(PART_HEALTH_TEXT_CROPS)) {
-        // Slice a sharp, narrow canvas window exactly over the expected text layer
-        const textCrop = createCropCanvas(raidImgElement, cropMap.x, cropMap.y, cropMap.w, cropMap.h);
+        const cX = Math.round(cropMap.x * raidImgElement.naturalWidth);
+        const cY = Math.round(cropMap.y * bounds.height) + bounds.top; // Balanced shifting
+        const cW = Math.round(cropMap.w * raidImgElement.naturalWidth);
+        const cH = Math.round(cropMap.h * bounds.height);
+
+        const textCrop = document.createElement('canvas');
+        textCrop.width = cW; textCrop.height = cH;
+        textCrop.getContext('2d').drawImage(raidImgElement, cX, cY, cW, cH, 0, 0, cW, cH);
         
-        // Whitelist numbers and gaming tier suffixes (M for Millions, B for Billions, K for Thousands)
         const rawText = await processCrop(textCrop, '0123456789.MBKmbk');
-        
-        // Clean up formatting and catch cases where the text is empty because the bar is missing
         let cleanText = rawText.trim().toUpperCase().replace(/\s+/g, '');
-        
-        // Match numbers optionally followed by scale letters
-        const validMetricRegex = /^[0-9]+(\.[0-9]+)?[MBK]?$/;
+        const validMetricRegex = /^[0-9]+(\.[0-9]+)?[MBK]?\$/;
         
         if (!cleanText || !validMetricRegex.test(cleanText)) {
             healthPools[partName] = "Missing Bar / Skeleton";
@@ -85,44 +85,62 @@ export async function parsePartHealthPools(raidImgElement) {
             healthPools[partName] = cleanText;
         }
     }
-
     return healthPools;
 }
 
 /**
- * 1 & 3. Processes raid.jpg to extract Titan Name, Build Morale value, and Part Health Pools
+ * 1 & 3. Processes raid.jpg to extract Titan Name, Build Morale value, and Part Health Pools using bounding box offsets.
+ * @param {HTMLImageElement} raidImgElement 
+ * @param {Object} bounds - The content bounds returned from pixelReader.js
  */
 export async function parseRaidImage(raidImgElement) {
     // Captures a thin, full-width window (X: 10% to 90%) right where the master HP row sits
-    const nameAndHpCrop = createCropCanvas(raidImgElement, 0.10, 0.175, 0.80, 0.04);
-    const moraleCrop = createCropCanvas(raidImgElement, 0.05, 0.70, 0.90, 0.06);
-    
-    // Use a loose alphanumeric whitelist to catch letters, numbers, and decimals cleanly
-    const rawNameHpText = await processCrop(nameAndHpCrop, 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789.,+%/ ');
-    const rawMoraleText = await processCrop(moraleCrop, 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789.+% ');
-    
-    // Call the new tracking health sweep
-    const partHealthPools = await parsePartHealthPools(raidImgElement);
+    // Crop coordinates map cleanly relative to the true gameplay height window
+    const nameCropX = Math.round(0.15 * raidImgElement.naturalWidth);
+    const nameCropY = Math.round(0.20 * bounds.height) + bounds.top; // Drop down below header
+    const nameCropW = Math.round(0.70 * raidImgElement.naturalWidth);
+    const nameCropH = Math.round(0.035 * bounds.height);
 
-    // Parsing Name from Master HP string e.g. "Klonk the Illuminator 3.36B HP" or "Mohaca 450.25M HP"
+    const moraleCropX = Math.round(0.05 * raidImgElement.naturalWidth);
+    const moraleCropY = Math.round(0.70 * bounds.height) + bounds.top;
+    const moraleCropW = Math.round(0.90 * raidImgElement.naturalWidth);
+    const moraleCropH = Math.round(0.06 * bounds.height);
+
+    // Build the sharp canvas slices
+    const nameCanvas = document.createElement('canvas');
+    nameCanvas.width = nameCropW; nameCanvas.height = nameCropH;
+    nameCanvas.getContext('2d').drawImage(raidImgElement, nameCropX, nameCropY, nameCropW, nameCropH, 0, 0, nameCropW, nameCropH);
+
+    const moraleCanvas = document.createElement('canvas');
+    moraleCanvas.width = moraleCropW; moraleCanvas.height = moraleCropH;
+    moraleCanvas.getContext('2d').drawImage(raidImgElement, moraleCropX, moraleCropY, moraleCropW, moraleCropH, 0, 0, moraleCropW, moraleCropH);
+
+    // Run Tesseract extraction loops
+    const rawNameHpText = await processCrop(nameCanvas, 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789.,+%/ ');
+    const rawMoraleText = await processCrop(moraleCanvas, 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789.+% ');
+    
+    // Call the standard limb metrics pass
+    const partHealthPools = await parsePartHealthPools(raidImgElement, bounds);
+
+    // Parse out Name string
     let titanLordName = "Unknown Titan";
-    // Replace multiple consecutive space characters with a single space character
     const cleanedLine = rawNameHpText.trim().replace(/\s+/g, ' ');
-
-    // Match patterns ending in HP, optionally preceded by game scale indicators (M, B, K) e.g. "3.36B HP"
-    const hpSplitRegex = /\s*\+?[0-9.,]+\s*[MBKmbk]?\s*HP/i;
+    const hpSplitRegex = /\s*[0-9.,]+\s*[MBKmbk]?\s*HP.*/i;
     
     if (hpSplitRegex.test(cleanedLine)) {
-        // Split the line at the HP match; everything to the left is the Titan Name
-        const components = cleanedLine.split(hpSplitRegex);
-        if (components[0] && components[0].trim().length > 0) {
-            titanLordName = components[0].trim();
+        const parts = cleanedLine.split(hpSplitRegex);
+        if (parts[0] && parts[0].trim().length > 0) {
+            titanLordName = parts[0].trim();
         }
     } else {
-        // Fallback: If "HP" text failed to read, strip any trailing numbers/symbols to preserve name
-        titanLordName = cleanedLine.replace(/[0-9.,+%/]+[MBKmbk]?\s*\$/i, '').trim();
+        const firstNumberMatch = cleanedLine.match(/[0-9]/);
+        if (firstNumberMatch && firstNumberMatch.index > 2) {
+            titanLordName = cleanedLine.substring(0, firstNumberMatch.index).trim();
+        } else {
+            titanLordName = cleanedLine;
+        }
     }
-    
+
     const moraleRegex = /Build\s+Morale\s+Active\s+\+?([0-9.]+)%/i;
     const moraleMatch = rawMoraleText.match(moraleRegex);
     const moraleValue = moraleMatch ? `${moraleMatch[1]}%` : "Not Found";
@@ -130,7 +148,7 @@ export async function parseRaidImage(raidImgElement) {
     return {
         titanLordName: titanLordName,
         moraleBonus: moraleValue,
-        partHealthPools: partHealthPools // Merged health pool array
+        partHealthPools: partHealthPools
     };
 }
 
