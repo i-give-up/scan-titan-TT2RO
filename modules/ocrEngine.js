@@ -347,11 +347,45 @@ export async function parseInfoImage(infoImgElement, targetTitanName) {
         cursedArmorEffect: "Not Found"
     };
 
+    /*
     // 2. Parse out the Raid Bonus value (typically searching for "Affliction Chance" multiplier)
     const bonusLine = lines.find(line => /Affliction\s+Chance/i.test(line) || /x[0-9.]+/i.test(line));
     if (bonusLine) {
         const bonusMatch = bonusLine.match(/(x[0-9.]+[^]*)/i);
         if (bonusMatch) raidBonus = bonusMatch[1].trim();
+    }
+    */
+
+    const areaBonusCropX = Math.round(0.572 * infoImgElement.naturalWidth);
+    const areaBonusCropY = Math.round(0.240 * bounds.height) + bounds.top;
+    const areaBonusCropW = Math.round(0.318 * infoImgElement.naturalWidth);
+    const areaBonusCropH = Math.round(0.024 * bounds.height);
+
+    const areaBonusCanvas = document.createElement('canvas');
+    areaBonusCanvas.width = areaBonusCropW; areaBonusCanvas.height = areaBonusCropH;
+    areaBonusCanvas.getContext('2d').drawImage(raidImgElement, areaBonusCropX, areaBonusCropY, areaBonusCropW, areaBonusCropH, 0, 0, areaBonusCropW, areaBonusCropH);
+
+    const areaBonusCanvasText = await processCrop(areaBonusCanvas);
+    const areaBonusLines = areaBonusCanvasText.split('\n').map(line => line.trim()).filter(Boolean);
+
+    const AREA_BONUSES = [
+        "+3s Attack Duration",
+        "+30% Affliction Damage",
+        "+50% Affliction Duration",
+        "+30% Burst Damage",
+        "x1.3 Burst Chance",
+        "+15% All Support Effects",
+        "x1.3 Affliction Chance",
+        "+15% All Raid Damage"
+    ];
+
+    for (const areaBonus of AREA_BONUSES) {
+        // If any token matches a clean segment inside the scanned output, resolve the profile name
+        const matchFound = areaBonusText.includes(areaBonus));
+        if (matchFound) {
+            raidBonus = areaBonus;
+            break;
+        }
     }
 
     // 3. Find table starting block matching your target Titan Lord
