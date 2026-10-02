@@ -227,13 +227,17 @@ async function parsePartHealthPools(raidImgElement, bounds) {
           if (textLabel) textLabel.innerText = `Extracted Text: "${cleanText}"`;
     
           // Strict syntax validation regex checking for valid numbers and optional metric suffixes
-          const validMetricRegex = /^[0-9]+\.[0-9]{2}[MBK8]?$/;
+          const validMetricRegex = /^[0-9]+\.[0-9]+[MBK8]?$/;
+          const extraEightBeforeBRegex = /\.[0-9]{2}8B$/;
     
           if (!cleanText || !validMetricRegex.test(cleanText)) {
             healthPools[partName] = "Missing Bar / Skeleton";
           } else if (cleanText.endsWith('8')){
-            // If the scanned text ends with 8, assume that Tesseract misread "B" as "8" and fix accordingly
+            // Workaround: If the scanned text ends with 8, assume that Tesseract misread "B" as "8"
             healthPools[partName] = cleanText.slice(0, -1) + 'B';
+          } else if (extraEightBeforeBRegex.test(cleanText)){
+            // Workaround: Sometimes Tesseract detects an extra 8 before B at the end  
+            healthPools[partName] = cleanText.slice(0, -2) + 'B';  
           } else {
             healthPools[partName] = cleanText;
           }
