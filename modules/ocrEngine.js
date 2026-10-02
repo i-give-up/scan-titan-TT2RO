@@ -124,7 +124,7 @@ async function parsePartHealthPools(raidImgElement, bounds) {
         ];
         
         // Compression buffer threshold (handles fuzzy edges or anti-aliasing artifacts)
-        const colorDistanceTolerance = 35; 
+        const colorDistanceTolerance = 50; 
         
         for (let i = 0; i < d.length; i += 4) {
           const r = d[i];
@@ -224,7 +224,7 @@ async function parsePartHealthPools(raidImgElement, bounds) {
           if (textLabel) textLabel.innerText = `Extracted Text: "${cleanText}"`;
     
           // Strict syntax validation regex checking for valid numbers and optional metric suffixes
-          const validMetricRegex = /^[0-9]+\.[0-9]{2}[MBK]?\$/;
+          const validMetricRegex = /^[0-9]+\.[0-9]{2}[MBK]?$/;
     
           if (!cleanText || !validMetricRegex.test(cleanText)) {
             healthPools[partName] = "Missing Bar / Skeleton";
