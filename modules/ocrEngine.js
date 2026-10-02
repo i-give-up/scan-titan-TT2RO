@@ -381,7 +381,7 @@ export async function parseInfoImage(infoImgElement, targetTitanName, bounds) {
 
     for (const areaBonus of AREA_BONUSES) {
         // If any token matches a clean segment inside the scanned output, resolve the profile name
-        const matchFound = areaBonusText.includes(areaBonus);
+        const matchFound = areaBonusCanvasText.includes(areaBonus);
         if (matchFound) {
             raidBonus = areaBonus;
             break;
