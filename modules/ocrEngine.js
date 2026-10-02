@@ -165,35 +165,8 @@ export async function parseRaidImage(raidImgElement, bounds) {
     // print to console for debugging purposes
     console.log(normalizedScannedText);
     console.log('rawMoraleText: ', rawMoraleText);
-    // 3. MULTI-LINE FILTERING: Inspect the entire text array line-by-line
-    const lines = rawMoraleText.split('\n').map(l => l.trim()).filter(Boolean);
-    let moraleValue = "Not Found";
-    
-    // Loop through every line found in the wide canvas catch net
-    for (const line of lines) {
-        // Look for structural keywords unique to the Morale status banner
-        if (/morale|active|bonus/i.test(line)) {
-            const match = line.match(/([0-9.]+)\s*%/);
-            if (match) {
-                moraleValue = `${match[1]}%`;
-                break; // Lock onto the value and exit the loop immediately!
-            }
-        }
-    }
-    
-    // Fallback: If keywords were garbled but an isolated percentage string exists near the middle frame
-    if (moraleValue === "Not Found") {
-        for (const line of lines) {
-            // Filter out rank lists (lines containing names like "Gosu" or attack metrics like "12/12")
-            if (!/\d+\/\d+/.test(line) && !/rank|name|damage/i.test(line)) {
-                const match = line.match(/([0-9.]+)\s*%/);
-                if (match) {
-                    moraleValue = `${match[1]}%`;
-                    break;
-                }
-            }
-        }
-    }
+ 
+    let moraleValue = rawMoraleText.match(/\+(\d+\.\d+%)\s*Bonus Damage/)[1];
 
     return {
         titanLordName: titanLordName,
