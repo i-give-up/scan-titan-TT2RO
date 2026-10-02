@@ -112,10 +112,10 @@ async function parsePartHealthPools(raidImgElement, bounds) {
  */
 export async function parseRaidImage(raidImgElement, bounds) {
     // 1. Safe, wide coordinate sweep covering the entire top panel area (Y: 10% to 25%)
-    const nameCropX = Math.round(0.05 * raidImgElement.naturalWidth);
-    const nameCropY = Math.round(0.10 * bounds.height) + bounds.top;
-    const nameCropW = Math.round(0.90 * raidImgElement.naturalWidth);
-    const nameCropH = Math.round(0.15 * bounds.height);
+    const nameCropX = Math.round(0.229 * raidImgElement.naturalWidth);
+    const nameCropY = Math.round(0.199 * bounds.height) + bounds.top;
+    const nameCropW = Math.round(0.701 * raidImgElement.naturalWidth);
+    const nameCropH = Math.round(0.024 * bounds.height);
 
     const nameCanvas = document.createElement('canvas');
     nameCanvas.width = nameCropW; nameCanvas.height = nameCropH;
@@ -152,7 +152,6 @@ export async function parseRaidImage(raidImgElement, bounds) {
     let titanLordName = "Unknown Titan";
     // Strip punctuation and normalize string to protect against spacing bugs
     const normalizedScannedText = rawTopText.toLowerCase().replace(/[^a-z0-9]/g, '');
-    // console.log(normalizedScannedText);
 
     // Search text for registry signatures
     for (const lord of TITAN_LORDS_REGISTRY) {
@@ -164,6 +163,8 @@ export async function parseRaidImage(raidImgElement, bounds) {
         }
     }
 
+    // print to console for debugging purposes
+    console.log(normalizedScannedText);
     console.log('rawMoraleText: ', rawMoraleText);
     // 3. MULTI-LINE FILTERING: Inspect the entire text array line-by-line
     const lines = rawMoraleText.split('\n').map(l => l.trim()).filter(Boolean);
