@@ -12,7 +12,7 @@ const TITAN_PART_ANCHORS = {
     leftArm:        { bar: { x: 0.243, y: 0.376 }, box: { x: 0.311, y: 0.407 } }, 
     rightArm:       { bar: { x: 0.605, y: 0.377 }, box: { x: 0.666, y: 0.407 } }, 
     torso:          { bar: { x: 0.423, y: 0.357 }, box: { x: 0.495, y: 0.386 } }, 
-    leftLeg:        { bar: { x: 0.348, y: 0.437 }, box: { x: 0.416, y: 0.461 } }, 
+    leftLeg:        { bar: { x: 0.348, y: 0.435 }, box: { x: 0.416, y: 0.461 } }, 
     rightLeg:       { bar: { x: 0.505, y: 0.435 }, box: { x: 0.582, y: 0.461 } }  
 };
 
