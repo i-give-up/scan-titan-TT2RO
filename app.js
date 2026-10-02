@@ -89,13 +89,15 @@ matchBtn.addEventListener('click', async () => {
             dCtx.strokeRect(nameX, nameY, nameW, nameH);
             dCtx.fillStyle = '#2ea44f';
             dCtx.font = `bold ${Math.max(14, w * 0.012)}px monospace`;
-            dCtx.fillText("[OCR Zone: Full Top Name Sweep]", Math.round(0.05 * w), nameY - 6);
+            dCtx.fillText("[OCR Zone: Full Top Name Sweep]", nameX, nameY - 6);
 
             // Outline Center Morale Row Window
-            const moraleY = Math.round(0.35 * bounds.height) + bounds.top;
-            const moraleH = Math.round(0.40 * bounds.height);
-            dCtx.strokeRect(Math.round(0.05 * w), moraleY, Math.round(0.90 * w), moraleH);
-            dCtx.fillText("[OCR Zone: Full Center Morale Sweep]", Math.round(0.05 * w), moraleY - 6);
+            const moraleX = Math.round(0.599 * w);
+            const moraleY = Math.round(0.528 * bounds.height) + bounds.top;
+            const moraleW = Math.round(0.332 * w);
+            const moraleH = Math.round(0.024 * bounds.height);
+            dCtx.strokeRect(moraleX, moraleY, moraleW, moraleH);
+            dCtx.fillText("[OCR Zone: Full Center Morale Sweep]", moraleX, moraleY - 6);
         }
 
         statusText.textContent = "⏳ Phase 2: Running OCR text mapping on Raid metrics...";
