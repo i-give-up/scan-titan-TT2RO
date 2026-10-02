@@ -127,7 +127,7 @@ function determineLayerState(hsl, rgb) {
     }
 
     // Check for Body Layer (Blue/Cyan)
-    if (h >= 170 && h <= 200 && s > 90) {
+    if (h >= 170 && h <= 200 && s > 70) {
         return "Body Layer";
     }
 
