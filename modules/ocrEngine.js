@@ -124,8 +124,8 @@ async function parsePartHealthPools(raidImgElement, bounds) {
         ];
         
         // Compression buffer threshold (handles fuzzy edges or anti-aliasing artifacts)
-        // 35 and 50 are too much?
-        const colorDistanceTolerance = 20; 
+        // 35 and 50 are too much? Even 20
+        const colorDistanceTolerance = 10; 
         
         for (let i = 0; i < d.length; i += 4) {
           const r = d[i];
