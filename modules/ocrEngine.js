@@ -124,7 +124,7 @@ async function parsePartHealthPools(raidImgElement, bounds) {
         
         // Compression buffer threshold (handles fuzzy edges or anti-aliasing artifacts)
         // 35 and 50 are too much? Even 20
-        const colorDistanceTolerance = 10; 
+        const colorDistanceTolerance = 15; 
         
         for (let i = 0; i < d.length; i += 4) {
           const r = d[i];
@@ -227,11 +227,14 @@ async function parsePartHealthPools(raidImgElement, bounds) {
           if (textLabel) textLabel.innerText = `Extracted Text: "${cleanText}"`;
     
           // Strict syntax validation regex checking for valid numbers and optional metric suffixes
-          const validMetricRegex = /^[0-9]+\.[0-9]{2}[MBK]?$/;
+          const validMetricRegex = /^[0-9]+\.[0-9]{2}[MBK8]?$/;
     
           if (!cleanText || !validMetricRegex.test(cleanText)) {
             healthPools[partName] = "Missing Bar / Skeleton";
-          } else {
+          } else if (cleanText.endsWith('8')){
+            // If the scanned text ends with 8, assume that Tesseract misread "B" as "8" and fix accordingly
+            healthPools[partName] = cleanText.slice(0, -1) + 'B';
+          } else
             healthPools[partName] = cleanText;
           }
         } catch (ocrError) {
