@@ -111,69 +111,72 @@ async function parsePartHealthPools(raidImgElement, bounds) {
           0, 0, textCrop.width, textCrop.height // Destination upscale rectangle
         );
     
-        // --- ADAPTIVE BINARIZATION AND AUTO-INVERSION ---
-        /**
-         * Instead of checking absolute brightness against a fixed number, we evaluate each pixel relative to 
-         * the average min/max color intensity inside that specific crop box, and dynamically determine if it 
-         * should flip to black or white. This is needed because using a single hardcoded brightness threshold
-         * causes text to blend in with background if contrast relative to background is low, and 
-         */
+        // --- LINE-BY-LINE HORIZONTAL STRIP BINARIZATION ---
         const imgData = tCtx.getImageData(0, 0, textCrop.width, textCrop.height);
         const d = imgData.data;
+        const cW = textCrop.width;
+        const cH = textCrop.height;
         
-        // Pass 1: Find the absolute brightest and darkest pixels in this crop block
-        let minLuma = 255;
-        let maxLuma = 0;
-        const lumaArray = new Uint8Array(d.length / 4);
-        
+        // Pass 1: Map the relative luminance matrix for every single pixel coordinate
+        const lumaGrid = new Uint8Array(cW * cH);
         for (let i = 0; i < d.length; i += 4) {
-          const r = d[i];
-          const g = d[i + 1];
-          const b = d[i + 2];
-          
-          // Calculate exact relative luminance
-          const luma = Math.round(r * 0.299 + g * 0.587 + b * 0.114);
-          lumaArray[i / 4] = luma;
-        
-          if (luma < minLuma) minLuma = luma;
-          if (luma > maxLuma) maxLuma = luma;
+          lumaGrid[i / 4] = Math.round(d[i] * 0.299 + d[i + 1] * 0.587 + d[i + 2] * 0.114);
         }
         
-        // Calculate the perfect dynamic midpoint threshold for this unique part box
-        const dynamicMidpoint = minLuma + (maxLuma - minLuma) / 2;
+        // Pass 2: Calculate independent min/max thresholds for each horizontal line sequence
+        // This isolates text from split background colors (active bar vs empty bar)
+        for (let y = 0; y < cH; y++) {
+          let lineMin = 255;
+          let lineMax = 0;
+          const rowOffset = y * cW;
         
-        // Pass 2: Apply adaptive thresholding
-        for (let i = 0; i < d.length; i += 4) {
-          const currentLuma = lumaArray[i / 4];
-          
-          // High contrast separation: force pixels to absolute extremes
-          const binaryVal = currentLuma > dynamicMidpoint ? 255 : 0;
-          
-          d[i] = binaryVal;
-          d[i + 1] = binaryVal;
-          d[i + 2] = binaryVal;
+          // Scan the current line array buffer to capture its localized contrast peaks
+          for (let x = 0; x < cW; x++) {
+            const luma = lumaGrid[rowOffset + x];
+            if (luma < lineMin) lineMin = luma;
+            if (luma > lineMax) lineMax = luma;
+          }
+        
+          // Calculate the local midpoint threshold for this specific horizontal strip
+          const lineMidpoint = lineMin + (lineMax - lineMin) / 2;
+          // Fallback protection: If a line is almost solid color, skip intense thresholding
+          const lineContrastRange = lineMax - lineMin;
+        
+          for (let x = 0; x < cW; x++) {
+            const pixelIndex = rowOffset + x;
+            const currentLuma = lumaGrid[pixelIndex];
+            const dataIdx = pixelIndex * 4;
+            
+            let binaryVal = 255; // Default background color state is white
+            
+            if (lineContrastRange > 20) {
+              // If the contrast range is valid, check if the pixel belongs to the brighter text element
+              binaryVal = currentLuma > lineMidpoint ? 255 : 0;
+            }
+        
+            d[dataIdx] = binaryVal;
+            d[dataIdx + 1] = binaryVal;
+            d[dataIdx + 2] = binaryVal;
+          }
         }
         
-        // Pass 3: Smart Auto-Inversion (Ensure text is ALWAYS Black and background is ALWAYS White)
-        // We sample the outer edges of the crop box to identify what color the background is.
-        let edgeWhitePixels = 0;
-        let totalEdgePixels = 0;
+        // Pass 3: Smart Auto-Orientation Correction Loop
+        // Ensures characters map to deep black vectors, while filtering empty borders out
+        let outerEdgeDarkCount = 0;
+        let totalEdgeVerificationPoints = 0;
         
-        // Scan top and bottom horizontal row edges
-        for (let x = 0; x < textCrop.width; x++) {
+        // Scan the outer boundary framing lines to confirm orientation values
+        for (let x = 0; x < cW; x++) {
           const topIdx = x * 4;
-          const bottomIdx = ((textCrop.height - 1) * textCrop.width + x) * 4;
-          
-          if (d[topIdx] === 255) edgeWhitePixels++;
-          if (d[bottomIdx] === 255) edgeWhitePixels++;
-          totalEdgePixels += 2;
+          const bottomIdx = ((cH - 1) * cW + x) * 4;
+          if (d[topIdx] === 0) outerEdgeDarkCount++;
+          if (d[bottomIdx] === 0) outerEdgeDarkCount++;
+          totalEdgeVerificationPoints += 2;
         }
         
-        // If the majority of our edge border pixels are black, the background is black.
-        // Tesseract needs a white background, so we invert the entire canvas.
-        const backgroundIsDark = (edgeWhitePixels / totalEdgePixels) < 0.5;
-        
-        if (backgroundIsDark) {
+        // If the boundary frame maps mostly black, the polarity is inverted. 
+        // We safely flip the entire matrix buffer to enforce clean black text patterns on white backgrounds.
+        if ((outerEdgeDarkCount / totalEdgeVerificationPoints) > 0.45) {
           for (let i = 0; i < d.length; i += 4) {
             d[i] = 255 - d[i];
             d[i + 1] = 255 - d[i + 1];
@@ -182,7 +185,7 @@ async function parsePartHealthPools(raidImgElement, bounds) {
         }
         
         tCtx.putImageData(imgData, 0, 0);
-        // --- END OF PROCESSING BLOCK ---
+        // --- END OF ROW PROCESSING CORRECTION SYSTEM ---
         
         // --- VISUAL DEBUGGER START ---
         // Check if a debug container exists on your page; if not, create one at the bottom of the body
