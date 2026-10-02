@@ -119,6 +119,9 @@ function determineLayerState(hsl, rgb) {
     const isGoldCurse   = (r > 220 && g > 140 && g < 185 && b < 20);  // Targets #f3a200 variants
     const isRedCurse    = (r > 170 && r < 210 && g > 30 && g < 65 && b < 35); // Targets #bf2f13 variants
 
+    // Print the hsl and rgb values to console
+    console.log("hsl ", hsl, "\nrgb ", rgb);
+    
     if (isPurpleCurse || isGoldCurse || isRedCurse) {
         return "Cursed Armor Layer";
     }
@@ -132,9 +135,6 @@ function determineLayerState(hsl, rgb) {
     if (h >= 236 && s <= 50 && l >= 89) {
         return "Armor Layer";
     }
-
-    // If detecting as skeleton layer, print the hsl and rgb values to console
-    console.log("Skeleton layer: hsl", hsl, "\nrgb", rgb);
     return "Skeleton Layer";
 }
 
