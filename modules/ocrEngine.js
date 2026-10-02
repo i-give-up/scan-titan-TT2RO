@@ -77,23 +77,62 @@ async function parsePartHealthPools(raidImgElement, bounds) {
         textCrop.width = cW; textCrop.height = cH;
         const tCtx = textCrop.getContext('2d');
         tCtx.drawImage(raidImgElement, cX, cY, cW, cH, 0, 0, cW, cH);
+
+        /**
+         * Use a two-pass color isolation approach. It crops the target area, performs an initial OCR pass, 
+         * and either applies a fallback brightness threshold if no words are found or samples pixel 
+         * color from the first detected word to apply a tolerance-based color mask for improved accuracy
+         * before sanitizing the final text output
+        */
+        // Perform Pass 1 on the raw crop canvas to find bounding boxes
+        const worker = await Tesseract.createWorker('eng');
+        await worker.setParameters({ tessedit_char_whitelist: '0123456789.MBKmbk' });
         
-        // Threshold Filtering (Converts text overlays to high-contrast black/white) ---
+        const pass1Result = await worker.recognize(textCrop);
+        const words = pass1Result.data.words;
+
+        // If Pass 1 finds a word, we take its bounding box, look at the middle pixel, and extract its RGB value
         const imgData = tCtx.getImageData(0, 0, cW, cH);
         const d = imgData.data;
-        for (let i = 0; i < d.length; i += 4) {
-            // Calculate basic pixel brightness luminance
+        
+        if (words && words.length > 0) {
+          // Get the first word found
+          const sampleWord = words[0].bbox; 
+          const sampleX = Math.floor(sampleWord.x0 + (sampleWord.x1 - sampleWord.x0) / 2);
+          const sampleY = Math.floor(sampleWord.y0 + (sampleWord.y1 - sampleWord.y0) / 2);
+          
+          // Sample target RGB color from the canvas
+          const pixelIndex = (sampleY * cW + sampleX) * 4;
+          const targetRGB = { r: d[pixelIndex], g: d[pixelIndex+1], b: d[pixelIndex+2] };
+          const tolerance = 45;
+        
+          // Apply the color isolation mask
+          for (let i = 0; i < d.length; i += 4) {
+            const colorDistance = Math.sqrt(
+              Math.pow(d[i] - targetRGB.r, 2) +
+              Math.pow(d[i+1] - targetRGB.g, 2) +
+              Math.pow(d[i+2] - targetRGB.b, 2)
+            );
+            // If it matches the text color, turn it white. Otherwise, black.
+            const val = colorDistance < tolerance ? 255 : 0;
+            d[i] = d[i+1] = d[i+2] = val;
+          }
+        } else {
+          // FALLBACK: If pass 1 found nothing, use your original brightness logic
+          for (let i = 0; i < d.length; i += 4) {
             const brightness = (d[i] * 0.299 + d[i+1] * 0.587 + d[i+2] * 0.114);
-            // The game text is bright white/light silver. 
-            // Force text pixels to solid white, and the background bar to solid black.
             const colorVal = brightness > 160 ? 255 : 0;
             d[i] = d[i+1] = d[i+2] = colorVal;
+          }
         }
-        tCtx.putImageData(imgData, 0, 0);
         
-        // Pass the cleaned high-contrast image matrix to Tesseract
-        const rawText = await processCrop(textCrop, '0123456789.MBKmbk');
-        let cleanText = rawText.trim().toUpperCase().replace(/\s+/g, '');
+        tCtx.putImageData(imgData, 0, 0);
+
+        // Pass 2 on the filtered high-contrast canvas matrix
+        const pass2Result = await worker.recognize(textCrop);
+        await worker.terminate();
+        
+        let cleanText = pass2Result.data.text.trim().toUpperCase().replace(/\s+/g, '');
         const validMetricRegex = /^[0-9]+(\.[0-9]+)?[MBK]?$/;
         
         if (!cleanText || !validMetricRegex.test(cleanText)) {
