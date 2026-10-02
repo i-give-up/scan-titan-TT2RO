@@ -138,14 +138,8 @@ function compileDataset(visuals, raidOcr, infoOcr, name) {
         const visualMeta = visuals[part] || { layer: 'Unknown', action: 'Target/Attack' };
         const healthText = raidOcr.partHealthPools?.[part] || 'Missing Bar / Skeleton';
 
-        // Override target if pixel engine flagged a missing bar region as a skeleton
-        let interpretedLayer = visualMeta.layer;
-        if (healthText.includes('Skeleton') || healthText.includes('Missing')) {
-            interpretedLayer = 'Skeleton Part';
-        }
-
         finalParts[part] = {
-            layer: interpretedLayer,
+            layer: visualMeta.layer,
             action: visualMeta.action,
             currentHealth: healthText
         };
