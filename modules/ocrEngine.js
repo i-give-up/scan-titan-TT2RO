@@ -111,7 +111,7 @@ async function parsePartHealthPools(raidImgElement, bounds) {
  * @param {Object} bounds - Content boundaries from pixelReader.js
  */
 export async function parseRaidImage(raidImgElement, bounds) {
-    // 1. Safe, wide coordinate sweep covering the entire top panel area (Y: 10% to 25%)
+    // Crop out the part of image containing titan lord name
     const nameCropX = Math.round(0.229 * raidImgElement.naturalWidth);
     const nameCropY = Math.round(0.199 * bounds.height) + bounds.top;
     const nameCropW = Math.round(0.701 * raidImgElement.naturalWidth);
@@ -121,12 +121,11 @@ export async function parseRaidImage(raidImgElement, bounds) {
     nameCanvas.width = nameCropW; nameCanvas.height = nameCropH;
     nameCanvas.getContext('2d').drawImage(raidImgElement, nameCropX, nameCropY, nameCropW, nameCropH, 0, 0, nameCropW, nameCropH);
 
-    // 1. BROAD COALESCENCE ZONE: Sweep the entire center of the display (Y: 0.35 to 0.75)
-    // This ensures the Morale banner is always caught, no matter where it floats on your device screen.
-    const moraleCropX = Math.round(0.05 * raidImgElement.naturalWidth);
-    const moraleCropY = Math.round(0.35 * bounds.height) + bounds.top; 
-    const moraleCropW = Math.round(0.90 * raidImgElement.naturalWidth);
-    const moraleCropH = Math.round(0.40 * bounds.height); // Capture the whole center spectrum at once
+    // Crop out the part of image containing morale bonus
+    const moraleCropX = Math.round(0.599 * raidImgElement.naturalWidth);
+    const moraleCropY = Math.round(0.528 * bounds.height) + bounds.top; 
+    const moraleCropW = Math.round(0.332 * raidImgElement.naturalWidth);
+    const moraleCropH = Math.round(0.024 * bounds.height); // Capture the whole center spectrum at once
     
     const moraleCanvas = document.createElement('canvas');
     moraleCanvas.width = moraleCropW; moraleCanvas.height = moraleCropH;
