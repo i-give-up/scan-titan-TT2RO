@@ -121,7 +121,7 @@ async function parsePartHealthPools(raidImgElement, bounds) {
           { r: 255, g: 255, b: 255 }, // #ffffff (Pure White)
           { r: 129, g: 130, b: 162 }, // #8182a2 (Muted Blue/Grey Text)
           { r: 255, g: 255, b: 239 }, // #ffffef (Pale Yellow)
-          { r: 223, g: 255, b: 255 }  // #dfffff (Light Cyan)
+          { r: 226, g: 255, b: 255 }  // #e2ffff (Very Pale Cyan)
         ];
         
         // Compression buffer threshold (handles fuzzy edges or anti-aliasing artifacts)
