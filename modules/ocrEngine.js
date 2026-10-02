@@ -69,7 +69,10 @@ async function parsePartHealthPools(raidImgElement, bounds) {
     // Initialize a single shared worker outside the loop to handle all 8 parts
     const sharedWorker = await Tesseract.createWorker('eng');
     await sharedWorker.setParameters({
-      tessedit_char_whitelist: '0123456789.MBKmbk'
+      tessedit_char_whitelist: '0123456789.MBKmbk',
+      tessedit_pageseg_mode: '7', // Treat the image strictly as a single text line (Crucial for fragments)
+      load_system_dawg: '0',      // Turn off language dictionaries so numbers don't auto-correct to words
+      load_freq_dawg: '0'
     });
     
     // Locate the canvas drawing loop inside parsePartHealthPools inside modules/ocrEngine.js and match this structure:
@@ -79,83 +82,66 @@ async function parsePartHealthPools(raidImgElement, bounds) {
         const cW = Math.round(cropMap.w * raidImgElement.naturalWidth);
         const cH = Math.round(cropMap.h * bounds.height);
     
+        // Setup the intermediate canvas matrix
         const textCrop = document.createElement('canvas');
-        textCrop.width = cW; textCrop.height = cH;
         const tCtx = textCrop.getContext('2d');
-        tCtx.drawImage(raidImgElement, cX, cY, cW, cH, 0, 0, cW, cH);
-
-        /**
-         * Use a two-pass color isolation approach. It crops the target area, performs an initial OCR pass, 
-         * and either applies a fallback brightness threshold if no words are found or samples pixel 
-         * color from the first detected word to apply a tolerance-based color mask for improved accuracy
-         * before sanitizing the final text output
-        */
-        // Run Pass 1 to detect word objects on the current cropped area
-        const pass1Result = await sharedWorker.recognize(textCrop);
-        const words = pass1Result.data.words;
-        console.log('Part name: ', partName, ', Health text from first pass: ', words);
-        const imgData = tCtx.getImageData(0, 0, cW, cH);
+    
+        // APPLY 3X IMAGE UPSCALING (Gives Tesseract massive quality boost on small screen metrics)
+        const scaleFactor = 3;
+        textCrop.width = cW * scaleFactor;
+        textCrop.height = cH * scaleFactor;
+    
+        // Use high-quality image smoothing during the upscale transform
+        tCtx.imageSmoothingEnabled = true;
+        tCtx.imageSmoothingQuality = 'high';
+    
+        // Draw and scale the image onto our working grid using our freshly computed absolute coordinates
+        tCtx.drawImage(
+          croppedImageCanvas,
+          cX, cY, cW, cH,                        // Source rectangle (computed pixel values)
+          0, 0, textCrop.width, textCrop.height // Destination upscale rectangle
+        );
+    
+        // PRE-PROCESSING: Contrast Binarization & Inversion
+        const imgData = tCtx.getImageData(0, 0, textCrop.width, textCrop.height);
         const d = imgData.data;
-        
-        if (words && words.length > 0) {
-          // Extract structural coordinates of the first found word object
-          const sampleWord = words[0].bbox;
-          
-          // Calculate center coordinates safely inside the word frame
-          const sampleX = Math.floor(sampleWord.x0 + (sampleWord.x1 - sampleWord.x0) / 2);
-          const sampleY = Math.floor(sampleWord.y0 + (sampleWord.y1 - sampleWord.y0) / 2);
-          
-          // Clamp boundaries to prevent image pixel array buffer overflows
-          const clampX = Math.max(0, Math.min(cW - 1, sampleX));
-          const clampY = Math.max(0, Math.min(cH - 1, sampleY));
-          
-          // Calculate target RGB index inside canvas array frame
-          const pixelIndex = (clampY * cW + clampX) * 4;
-          const targetRGB = {
-            r: d[pixelIndex],
-            g: d[pixelIndex + 1],
-            b: d[pixelIndex + 2]
-          };
-          console.log("RGB value of text: ", targetRGB);
-          const tolerance = 45;
-        
-          // Process image byte structure using color distance masking
-          for (let i = 0; i < d.length; i += 4) {
-            const colorDistance = Math.sqrt(
-              Math.pow(d[i] - targetRGB.r, 2) +
-              Math.pow(d[i + 1] - targetRGB.g, 2) +
-              Math.pow(d[i + 2] - targetRGB.b, 2)
-            );
-            
-            // Convert match regions to solid white, everything else to solid black
-            const matchVal = colorDistance < tolerance ? 255 : 0;
-            d[i] = matchVal;
-            d[i + 1] = matchVal;
-            d[i + 2] = matchVal;
-          }
-        } else {
-          // FALLBACK: Use your original brightness threshold method if pass 1 fails
-          for (let i = 0; i < d.length; i += 4) {
-            const brightness = (d[i] * 0.299 + d[i + 1] * 0.587 + d[i + 2] * 0.114);
-            const fallbackVal = brightness > 160 ? 255 : 0;
-            d[i] = fallbackVal;
-            d[i + 1] = fallbackVal;
-            d[i + 2] = fallbackVal;
-          }
+    
+        for (let i = 0; i < d.length; i += 4) {
+          const r = d[i];
+          const g = d[i + 1];
+          const b = d[i + 2];
+    
+          // Calculate relative color luminance
+          const brightness = (r * 0.299 + g * 0.587 + b * 0.114);
+    
+          // Convert bright text to pure black, and dim backgrounds to pure white
+          const targetColor = brightness > 140 ? 0 : 255; 
+    
+          d[i] = targetColor;     
+          d[i + 1] = targetColor; 
+          d[i + 2] = targetColor; 
         }
-        
-        // Write the high-contrast binary data map back into the canvas
         tCtx.putImageData(imgData, 0, 0);
-
-        // --- PASS 2: Recognize complete text on the isolated mask image ---
-        const pass2Result = await sharedWorker.recognize(textCrop);
-        let cleanText = pass2Result.data.text.trim().toUpperCase().replace(/\s+/g, '');
+    
+        // Convert processed canvas buffer to DataURL for Tesseract to ingest
+        const processedDataUrl = textCrop.toDataURL();
         
-        const validMetricRegex = /^[0-9]+(\.[0-9]+)?[MBKmbk]?$/;
-        if (!cleanText || !validMetricRegex.test(cleanText)) {
+        try {
+          // 5. OCR Pass execution on the high-contrast single line text frame
+          const ocrResult = await sharedWorker.recognize(processedDataUrl);
+          let cleanText = ocrResult.data.text.trim().toUpperCase().replace(/\s+/g, '');
+    
+          // Strict syntax validation regex checking for valid numbers and optional metric suffixes
+          const validMetricRegex = /^[0-9]+(\.[0-9]+)?[MBK]?\$/;
+    
+          if (!cleanText || !validMetricRegex.test(cleanText)) {
+            healthPools[partName] = "Missing Bar / Skeleton";
+          } else {
+            healthPools[partName] = cleanText;
+          }
+        } catch (ocrError) {
+          console.error(`OCR Extraction failed for part ${partName}:`, ocrError);
           healthPools[partName] = "Missing Bar / Skeleton";
-        } else {
-          healthPools[partName] = cleanText;
         }
     }
     // Terminate the shared worker instance after completing all passes
