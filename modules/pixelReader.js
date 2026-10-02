@@ -113,7 +113,7 @@ function rgbToHsl(r, g, b) {
 function determineLayerState(hsl, rgb) {
     const { h, s, l } = hsl;
     const [r, g, b] = rgb;
-    console.log("hsl", hsl, "\nrgb", rgb);
+    
     // Check for Cursed Armor Layer (Three distinct color conditions)
     const isPurpleCurse = (h >= 260 && h <= 330 && s > 20); // Targets #9755b3 variants
     const isGoldCurse   = (r > 220 && g > 140 && g < 185 && b < 20);  // Targets #f3a200 variants
@@ -133,6 +133,8 @@ function determineLayerState(hsl, rgb) {
         return "Armor Layer";
     }
 
+    // If detecting as skeleton layer, print the hsl and rgb values to console
+    console.log("Skeleton layer: hsl", hsl, "\nrgb", rgb);
     return "Skeleton Layer";
 }
 
