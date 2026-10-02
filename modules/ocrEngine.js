@@ -120,7 +120,7 @@ async function parsePartHealthPools(raidImgElement, bounds) {
         const targets = [
           { r: 255, g: 255, b: 255 }, // #ffffff (Pure White)
           { r: 129, g: 130, b: 162 }, // #8182a2 (Muted Blue/Grey Text)
-          { r: 255, g: 251, b: 195 }  // #fffbc3 (Pale Yellow)
+          { r: 255, g: 255, b: 239 }  // #ffffef (Pale Yellow)
         ];
         
         // Compression buffer threshold (handles fuzzy edges or anti-aliasing artifacts)
