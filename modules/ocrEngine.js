@@ -111,6 +111,53 @@ async function parsePartHealthPools(raidImgElement, bounds) {
           cX, cY, cW, cH,                        // Source rectangle (computed pixel values)
           0, 0, textCrop.width, textCrop.height // Destination upscale rectangle
         );
+
+        // --- EXACT COLOR BINARIZATION FILTERS ---
+        // Color-Targeted Binarization Filter
+        const imgData = tCtx.getImageData(0, 0, textCrop.width, textCrop.height);
+        const d = imgData.data;
+        
+        // Define your target color metrics
+        const targets = [
+          { r: 255, g: 255, b: 255 }, // #ffffff (Pure White)
+          { r: 129, g: 130, b: 162 }  // #8182a2 (Muted Blue/Grey Text)
+        ];
+        
+        // Compression buffer threshold (handles fuzzy edges or anti-aliasing artifacts)
+        const colorDistanceTolerance = 35; 
+        
+        for (let i = 0; i < d.length; i += 4) {
+          const r = d[i];
+          const g = d[i + 1];
+          const b = d[i + 2];
+        
+          let matchesText = false;
+        
+          // Verify current pixel against each known UI text color signature
+          for (const target of targets) {
+            const distance = Math.sqrt(
+              Math.pow(r - target.r, 2) +
+              Math.pow(g - target.g, 2) +
+              Math.pow(b - target.b, 2)
+            );
+        
+            if (distance < colorDistanceTolerance) {
+              matchesText = true;
+              break; // Exit early if we match a text color
+            }
+          }
+        
+          // Tesseract Rule: Force text pixels to solid BLACK (0)
+          // Force all non-matching background pixels to solid WHITE (255)
+          const outputColor = matchesText ? 0 : 255;
+        
+          d[i] = outputColor;     // Red
+          d[i + 1] = outputColor; // Green
+          d[i + 2] = outputColor; // Blue
+        }
+        
+        tCtx.putImageData(imgData, 0, 0);
+        // --- END OF EXACT COLOR EXTRACTION ---
         
         // --- VISUAL DEBUGGER START ---
         // Check if a debug container exists on your page; if not, create one at the bottom of the body
