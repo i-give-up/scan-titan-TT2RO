@@ -111,27 +111,79 @@ async function parsePartHealthPools(raidImgElement, bounds) {
           0, 0, textCrop.width, textCrop.height // Destination upscale rectangle
         );
     
-        // PRE-PROCESSING: Contrast Binarization & Inversion
+        // --- ADAPTIVE BINARIZATION AND AUTO-INVERSION ---
+        /**
+         * Instead of checking absolute brightness against a fixed number, we evaluate each pixel relative to 
+         * the average min/max color intensity inside that specific crop box, and dynamically determine if it 
+         * should flip to black or white. This is needed because using a single hardcoded brightness threshold
+         * causes text to blend in with background if contrast relative to background is low, and 
+         */
         const imgData = tCtx.getImageData(0, 0, textCrop.width, textCrop.height);
         const d = imgData.data;
-    
+        
+        // Pass 1: Find the absolute brightest and darkest pixels in this crop block
+        let minLuma = 255;
+        let maxLuma = 0;
+        const lumaArray = new Uint8Array(d.length / 4);
+        
         for (let i = 0; i < d.length; i += 4) {
           const r = d[i];
           const g = d[i + 1];
           const b = d[i + 2];
-    
-          // Calculate relative color luminance
-          const brightness = (r * 0.299 + g * 0.587 + b * 0.114);
-    
-          // Convert bright text to pure black, and dim backgrounds to pure white
-          const targetColor = brightness > 140 ? 0 : 255; 
-    
-          d[i] = targetColor;     
-          d[i + 1] = targetColor; 
-          d[i + 2] = targetColor; 
+          
+          // Calculate exact relative luminance
+          const luma = Math.round(r * 0.299 + g * 0.587 + b * 0.114);
+          lumaArray[i / 4] = luma;
+        
+          if (luma < minLuma) minLuma = luma;
+          if (luma > maxLuma) maxLuma = luma;
         }
+        
+        // Calculate the perfect dynamic midpoint threshold for this unique part box
+        const dynamicMidpoint = minLuma + (maxLuma - minLuma) / 2;
+        
+        // Pass 2: Apply adaptive thresholding
+        for (let i = 0; i < d.length; i += 4) {
+          const currentLuma = lumaArray[i / 4];
+          
+          // High contrast separation: force pixels to absolute extremes
+          const binaryVal = currentLuma > dynamicMidpoint ? 255 : 0;
+          
+          d[i] = binaryVal;
+          d[i + 1] = binaryVal;
+          d[i + 2] = binaryVal;
+        }
+        
+        // Pass 3: Smart Auto-Inversion (Ensure text is ALWAYS Black and background is ALWAYS White)
+        // We sample the outer edges of the crop box to identify what color the background is.
+        let edgeWhitePixels = 0;
+        let totalEdgePixels = 0;
+        
+        // Scan top and bottom horizontal row edges
+        for (let x = 0; x < textCrop.width; x++) {
+          const topIdx = x * 4;
+          const bottomIdx = ((textCrop.height - 1) * textCrop.width + x) * 4;
+          
+          if (d[topIdx] === 255) edgeWhitePixels++;
+          if (d[bottomIdx] === 255) edgeWhitePixels++;
+          totalEdgePixels += 2;
+        }
+        
+        // If the majority of our edge border pixels are black, the background is black.
+        // Tesseract needs a white background, so we invert the entire canvas.
+        const backgroundIsDark = (edgeWhitePixels / totalEdgePixels) < 0.5;
+        
+        if (backgroundIsDark) {
+          for (let i = 0; i < d.length; i += 4) {
+            d[i] = 255 - d[i];
+            d[i + 1] = 255 - d[i + 1];
+            d[i + 2] = 255 - d[i + 2];
+          }
+        }
+        
         tCtx.putImageData(imgData, 0, 0);
-
+        // --- END OF PROCESSING BLOCK ---
+        
         // --- VISUAL DEBUGGER START ---
         // Check if a debug container exists on your page; if not, create one at the bottom of the body
         let debugContainer = document.getElementById('tesseract-debug-container');
