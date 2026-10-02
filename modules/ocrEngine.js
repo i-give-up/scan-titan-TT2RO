@@ -82,7 +82,6 @@ async function parsePartHealthPools(raidImgElement, bounds) {
       tessedit_pageseg_mode: '7', // Treat the image strictly as a single text line (Crucial for fragments)
       load_system_dawg: '0',      // Turn off language dictionaries so numbers don't auto-correct to words
       load_freq_dawg: '0',
-      tessedit_do_invert: '1' // Tells Tesseract to run an automatic polarity inversion check natively
     });
     
     // Locate the canvas drawing loop inside parsePartHealthPools inside modules/ocrEngine.js and match this structure:
