@@ -363,7 +363,7 @@ export async function parseInfoImage(infoImgElement, targetTitanName, bounds) {
 
     const areaBonusCanvas = document.createElement('canvas');
     areaBonusCanvas.width = areaBonusCropW; areaBonusCanvas.height = areaBonusCropH;
-    areaBonusCanvas.getContext('2d').drawImage(raidImgElement, areaBonusCropX, areaBonusCropY, areaBonusCropW, areaBonusCropH, 0, 0, areaBonusCropW, areaBonusCropH);
+    areaBonusCanvas.getContext('2d').drawImage(infoImgElement, areaBonusCropX, areaBonusCropY, areaBonusCropW, areaBonusCropH, 0, 0, areaBonusCropW, areaBonusCropH);
 
     const areaBonusCanvasText = await processCrop(areaBonusCanvas);
     const areaBonusLines = areaBonusCanvasText.split('\n').map(line => line.trim()).filter(Boolean);
