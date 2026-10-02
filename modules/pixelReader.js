@@ -114,12 +114,7 @@ function determineLayerState(hsl, rgb) {
     const { h, s, l } = hsl;
     const [r, g, b] = rgb;
 
-    // 1. Check for Skeleton (Missing Bar or background color)
-    if (l < 15 || (s < 12 && l < 40)) {
-        return "Skeleton Part";
-    }
-
-    // 2. Check for Cursed Armor Layer (Three distinct color conditions)
+    // Check for Cursed Armor Layer (Three distinct color conditions)
     const isPurpleCurse = (h >= 260 && h <= 330 && s > 20); // Targets #9755b3 variants
     const isGoldCurse   = (r > 220 && g > 140 && g < 185 && b < 20);  // Targets #f3a200 variants
     const isRedCurse    = (r > 170 && r < 210 && g > 30 && g < 65 && b < 35); // Targets #bf2f13 variants
@@ -128,17 +123,17 @@ function determineLayerState(hsl, rgb) {
         return "Cursed Armor Layer";
     }
 
-    // 3. Check for Body Layer (Blue/Cyan)
+    // Check for Body Layer (Blue/Cyan)
     if (h >= 170 && h <= 250 && s > 30) {
         return "Body Layer";
     }
 
-    // 4. Check for Armor Layer (Grey/White/Metallic)
-    if (s <= 18 && l >= 35) {
+    // Check for Armor Layer (Grey/White/Metallic)
+    if (h >= 236 && s <= 44 && l >= 89) {
         return "Armor Layer";
     }
 
-    return "Unknown / Hidden";
+    return "Skeleton Layer";
 }
 
 /**
