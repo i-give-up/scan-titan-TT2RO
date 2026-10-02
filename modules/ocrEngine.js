@@ -174,20 +174,23 @@ async function parsePartHealthPools(raidImgElement, bounds) {
           debugContainer.style.color = '#fff';
           debugContainer.style.padding = '10px';
           debugContainer.style.borderRadius = '8px';
-          debugContainer.style.maxHeight = '400px';
+          debugContainer.style.maxHeight = '500px';
           debugContainer.style.overflowY = 'auto';
           debugContainer.style.fontFamily = 'monospace';
           debugContainer.style.fontSize = '12px';
           debugContainer.style.border = '2px solid #ff4444';
           document.body.appendChild(debugContainer);
           
-          // Clear old frames on a new scanning cycle execution loop
-          debugContainer.innerHTML = '<strong>OCR Preprocessing Debug Frames:</strong><br>';
+          // Wipe out all old content ONLY when processing the very first item in the loop array
+          const partKeys = Object.keys(PART_HEALTH_TEXT_CROPS);
+          if (partName === partKeys[0]) {
+            debugContainer.innerHTML = '<strong>OCR Preprocessing Debug Frames:</strong><br><br>';
+          }
         }
         
         // Create a visual row wrapper for this specific titan part crop
         const row = document.createElement('div');
-        row.style.marginBottom = '8px';
+        row.style.marginBottom = '12px';
         row.style.borderBottom = '1px solid #444';
         row.style.paddingBottom = '4px';
         
