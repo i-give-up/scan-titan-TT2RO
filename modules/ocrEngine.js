@@ -81,28 +81,16 @@ async function parsePartHealthPools(raidImgElement, bounds) {
       tessedit_char_whitelist: '0123456789.MBKmbk',
       tessedit_pageseg_mode: '7', // Treat the image strictly as a single text line (Crucial for fragments)
       load_system_dawg: '0',      // Turn off language dictionaries so numbers don't auto-correct to words
-      load_freq_dawg: '0'
+      load_freq_dawg: '0',
+      tessedit_do_invert: '1' // Tells Tesseract to run an automatic polarity inversion check natively
     });
     
     // Locate the canvas drawing loop inside parsePartHealthPools inside modules/ocrEngine.js and match this structure:
     for (const [partName, cropMap] of Object.entries(PART_HEALTH_TEXT_CROPS)) {
-        // Calculate the exact scaling factor between the browser bounds and the real image resolution
-        const scaleY = raidImgElement.naturalHeight / bounds.height;
-        
-        // Convert the percentage coordinates into pixel coordinates aligned to the image's raw resolution
         const cX = Math.round(cropMap.x * raidImgElement.naturalWidth);
+        const cY = Math.round((cropMap.y * bounds.height) + bounds.top - (cropMap.h * bounds.height / 2));
         const cW = Math.round(cropMap.w * raidImgElement.naturalWidth);
-        
-        // Map vertical coordinates safely to naturalHeight using the scale factor
-        const trueCenterY = (cropMap.y * bounds.height) + bounds.top;
-        const cY = Math.round((trueCenterY - (cropMap.h * bounds.height / 2)) * scaleY);
-        const cH = Math.round(cropMap.h * bounds.height * scaleY);
-        
-        // Safety Guardrail: Prevent processing if calculated coordinates collapse to invalid boundaries
-        if (cW <= 0 || cH <= 0 || cX + cW > raidImgElement.naturalWidth || cY + cH > raidImgElement.naturalHeight) {
-          healthPools[partName] = "Missing Bar / Skeleton";
-          continue;
-        }
+        const cH = Math.round(cropMap.h * bounds.height);
     
         // Setup the intermediate canvas matrix
         const textCrop = document.createElement('canvas');
@@ -123,80 +111,6 @@ async function parsePartHealthPools(raidImgElement, bounds) {
           cX, cY, cW, cH,                        // Source rectangle (computed pixel values)
           0, 0, textCrop.width, textCrop.height // Destination upscale rectangle
         );
-    
-        // --- LINE-BY-LINE HORIZONTAL STRIP BINARIZATION ---
-        const imgData = tCtx.getImageData(0, 0, textCrop.width, textCrop.height);
-        const d = imgData.data;
-        
-        // Pass 1: Map the relative luminance matrix for every single pixel coordinate
-        const lumaGrid = new Uint8Array(cW * cH);
-        for (let i = 0; i < d.length; i += 4) {
-          lumaGrid[i / 4] = Math.round(d[i] * 0.299 + d[i + 1] * 0.587 + d[i + 2] * 0.114);
-        }
-        
-        // Pass 2: Calculate independent min/max thresholds for each horizontal line sequence
-        // This isolates text from split background colors (active bar vs empty bar)
-        for (let y = 0; y < cH; y++) {
-          let lineMin = 255;
-          let lineMax = 0;
-          const rowOffset = y * cW;
-        
-          // Scan the current line array buffer to capture its localized contrast peaks
-          for (let x = 0; x < cW; x++) {
-            const luma = lumaGrid[rowOffset + x];
-            if (luma < lineMin) lineMin = luma;
-            if (luma > lineMax) lineMax = luma;
-          }
-        
-          // Calculate the local midpoint threshold for this specific horizontal strip
-          const lineMidpoint = lineMin + (lineMax - lineMin) / 2;
-          // Fallback protection: If a line is almost solid color, skip intense thresholding
-          const lineContrastRange = lineMax - lineMin;
-        
-          for (let x = 0; x < cW; x++) {
-            const pixelIndex = rowOffset + x;
-            const currentLuma = lumaGrid[pixelIndex];
-            const dataIdx = pixelIndex * 4;
-            
-            let binaryVal = 255; // Default background color state is white
-            
-            if (lineContrastRange > 20) {
-              // If the contrast range is valid, check if the pixel belongs to the brighter text element
-              binaryVal = currentLuma > lineMidpoint ? 255 : 0;
-            }
-        
-            d[dataIdx] = binaryVal;
-            d[dataIdx + 1] = binaryVal;
-            d[dataIdx + 2] = binaryVal;
-          }
-        }
-        
-        // Pass 3: Smart Auto-Orientation Correction Loop
-        // Ensures characters map to deep black vectors, while filtering empty borders out
-        let outerEdgeDarkCount = 0;
-        let totalEdgeVerificationPoints = 0;
-        
-        // Scan the outer boundary framing lines to confirm orientation values
-        for (let x = 0; x < cW; x++) {
-          const topIdx = x * 4;
-          const bottomIdx = ((cH - 1) * cW + x) * 4;
-          if (d[topIdx] === 0) outerEdgeDarkCount++;
-          if (d[bottomIdx] === 0) outerEdgeDarkCount++;
-          totalEdgeVerificationPoints += 2;
-        }
-        
-        // If the boundary frame maps mostly black, the polarity is inverted. 
-        // We safely flip the entire matrix buffer to enforce clean black text patterns on white backgrounds.
-        if ((outerEdgeDarkCount / totalEdgeVerificationPoints) > 0.45) {
-          for (let i = 0; i < d.length; i += 4) {
-            d[i] = 255 - d[i];
-            d[i + 1] = 255 - d[i + 1];
-            d[i + 2] = 255 - d[i + 2];
-          }
-        }
-        
-        tCtx.putImageData(imgData, 0, 0);
-        // --- END OF ROW PROCESSING CORRECTION SYSTEM ---
         
         // --- VISUAL DEBUGGER START ---
         // Check if a debug container exists on your page; if not, create one at the bottom of the body
