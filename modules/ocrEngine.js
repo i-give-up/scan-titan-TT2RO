@@ -358,7 +358,7 @@ export async function parseInfoImage(infoImgElement, targetTitanName, bounds) {
 
     const areaBonusCropX = Math.round(0.572 * infoImgElement.naturalWidth);
     const areaBonusCropY = Math.round(0.184 * bounds.height) + bounds.top;
-    const areaBonusCropW = Math.round(0.318 * infoImgElement.naturalWidth);
+    const areaBonusCropW = Math.round(0.354 * infoImgElement.naturalWidth);
     const areaBonusCropH = Math.round(0.022 * bounds.height);
 
     const areaBonusCanvas = document.createElement('canvas');
