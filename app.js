@@ -82,9 +82,11 @@ matchBtn.addEventListener('click', async () => {
             dCtx.lineWidth = Math.max(4, w * 0.003);
         
             // Outline Top Panel Name Scan Window
-            const nameY = Math.round(0.10 * bounds.height) + bounds.top;
-            const nameH = Math.round(0.15 * bounds.height);
-            dCtx.strokeRect(Math.round(0.05 * w), nameY, Math.round(0.90 * w), nameH);
+            const nameX = Math.round(0.229 * w);
+            const nameY = Math.round(0.199 * bounds.height) + bounds.top;
+            const nameW = Math.round(0.701 * w);
+            const nameH = Math.round(0.024 * bounds.height);
+            dCtx.strokeRect(nameX, nameY, nameW, nameH);
             dCtx.fillStyle = '#2ea44f';
             dCtx.font = `bold ${Math.max(14, w * 0.012)}px monospace`;
             dCtx.fillText("[OCR Zone: Full Top Name Sweep]", Math.round(0.05 * w), nameY - 6);
