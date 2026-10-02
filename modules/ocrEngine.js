@@ -388,7 +388,7 @@ export async function parseInfoImage(infoImgElement, targetTitanName, bounds) {
         }
     }
 
-    console.log('Area Bonus Canvas Text: ', areaBonusCanvasText");
+    console.log('Area Bonus Canvas Text: ', areaBonusCanvasText);
 
     // 3. Find table starting block matching your target Titan Lord
     // Normalize string comparisons to defend against minor OCR typo variations
