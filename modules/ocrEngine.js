@@ -61,7 +61,7 @@ async function parsePartHealthPools(raidImgElement, bounds) {
         leftArm:        { x: 0.243, y: 0.376, w: 0.14, h: 0.016 },
         rightArm:       { x: 0.605, y: 0.378, w: 0.14, h: 0.016 },
         torso:          { x: 0.423, y: 0.358, w: 0.14, h: 0.016 },
-        leftLeg:        { x: 0.348, y: 0.438, w: 0.14, h: 0.016 },
+        leftLeg:        { x: 0.348, y: 0.435, w: 0.14, h: 0.016 },
         rightLeg:       { x: 0.505, y: 0.435, w: 0.14, h: 0.016 }
     };
 
