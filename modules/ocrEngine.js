@@ -66,6 +66,15 @@ async function parsePartHealthPools(raidImgElement, bounds) {
     };
 
     const healthPools = {};
+    
+    // Recreate your file's original internal cropped canvas utility framework
+    const raidCanvas = document.createElement('canvas');
+    const raidCtx = raidCanvas.getContext('2d');
+    raidCanvas.width = raidImgElement.naturalWidth;
+    raidCanvas.height = raidImgElement.naturalHeight;
+    raidCtx.drawImage(raidImgElement, 0, 0);
+    
+    
     // Initialize a single shared worker outside the loop to handle all 8 parts
     const sharedWorker = await Tesseract.createWorker('eng');
     await sharedWorker.setParameters({
@@ -97,7 +106,7 @@ async function parsePartHealthPools(raidImgElement, bounds) {
     
         // Draw and scale the image onto our working grid using our freshly computed absolute coordinates
         tCtx.drawImage(
-          croppedImageCanvas,
+          raidCanvas,
           cX, cY, cW, cH,                        // Source rectangle (computed pixel values)
           0, 0, textCrop.width, textCrop.height // Destination upscale rectangle
         );
@@ -132,7 +141,7 @@ async function parsePartHealthPools(raidImgElement, bounds) {
           let cleanText = ocrResult.data.text.trim().toUpperCase().replace(/\s+/g, '');
     
           // Strict syntax validation regex checking for valid numbers and optional metric suffixes
-          const validMetricRegex = /^[0-9]+(\.[0-9]+)?[MBK]?\$/;
+          const validMetricRegex = /^[0-9]+\.[0-9]{2}[MBK]?\$/;
     
           if (!cleanText || !validMetricRegex.test(cleanText)) {
             healthPools[partName] = "Missing Bar / Skeleton";
