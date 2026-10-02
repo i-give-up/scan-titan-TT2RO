@@ -234,7 +234,7 @@ async function parsePartHealthPools(raidImgElement, bounds) {
           } else if (cleanText.endsWith('8')){
             // If the scanned text ends with 8, assume that Tesseract misread "B" as "8" and fix accordingly
             healthPools[partName] = cleanText.slice(0, -1) + 'B';
-          } else
+          } else {
             healthPools[partName] = cleanText;
           }
         } catch (ocrError) {
