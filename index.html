@@ -3,34 +3,35 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tap Titans 2 - Raid Analyzer</title>
+    <title>Tap Titans 2 - Titan Lord Scanner</title>
     <!-- Link to your external stylesheet -->
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
 <div class="container">
-    <h2>📸 Tap Titans 2 Raid Scanner</h2>
+    <h2>📸 Tap Titans 2 Titan Lord Scanner</h2>
     <p id="status">⏳ Initializing Web Engines (OpenCV & Tesseract)... Please wait.</p>
 
     <div class="upload-section">
         <div class="upload-box">
-            <strong>1. Upload Raid Screenshot (raid.jpg)</strong>
-            <p class="box-desc">Shows the live Titan health bars and strategies</p>
+            <strong>1. Upload Raid tab screenshot</strong>
+            <p class="box-desc">Upload the screenshot showing the health and targets of the current titan lord. Do not crop.</p>
             <input type="file" id="sceneInput" accept="image/*" disabled>
             <img id="scenePreview" class="preview-img" alt="Raid snapshot preview">
         </div>
         
         <div class="upload-box">
-            <strong>2. Upload Info Screenshot (info.jpg)</strong>
-            <p class="box-desc">Shows the Titan reference data database rows</p>
+            <strong>2. Upload Info tab screenshot</strong>
+            <p class="box-desc">Upload the screenshot containing the area bonus (e.g. x1.3 Affliction Chance) and body/armor/bonus/cursed armor stats of current titan lord. 
+                Do not crop and make sure to scroll until the cursed armor for the current titan lord is fully visible in the screenshot</p>
             <input type="file" id="templateInput" accept="image/*" disabled>
             <img id="templatePreview" class="preview-img" alt="Info panel preview">
         </div>
     </div>
 
     <!-- Processing Button -->
-    <button id="matchBtn" disabled>Run Deep Image Analysis</button>
+    <button id="matchBtn" disabled>Scan Images</button>
 
     <!-- Debug Section UI Layout -->
     <div id="debugSection" style="display:none; margin-top: 20px; background:#fff; padding:15px; border-radius:6px; border:1px solid #e1e4e8;">
