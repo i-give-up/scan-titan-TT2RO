@@ -329,7 +329,7 @@ export async function parseRaidImage(raidImgElement, bounds) {
  * @param {HTMLImageElement} infoImgElement - The uploaded information panel image
  * @param {string} targetTitanName - The name extracted from the raid image (e.g., "Klonk the Illuminator")
  */
-export async function parseInfoImage(infoImgElement, targetTitanName) {
+export async function parseInfoImage(infoImgElement, targetTitanName, bounds) {
     const fullCanvas = document.createElement('canvas');
     fullCanvas.width = infoImgElement.naturalWidth;
     fullCanvas.height = infoImgElement.naturalHeight;
