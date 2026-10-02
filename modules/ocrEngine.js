@@ -114,8 +114,6 @@ async function parsePartHealthPools(raidImgElement, bounds) {
         // --- LINE-BY-LINE HORIZONTAL STRIP BINARIZATION ---
         const imgData = tCtx.getImageData(0, 0, textCrop.width, textCrop.height);
         const d = imgData.data;
-        const cW = textCrop.width;
-        const cH = textCrop.height;
         
         // Pass 1: Map the relative luminance matrix for every single pixel coordinate
         const lumaGrid = new Uint8Array(cW * cH);
