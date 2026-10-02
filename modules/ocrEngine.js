@@ -131,7 +131,61 @@ async function parsePartHealthPools(raidImgElement, bounds) {
           d[i + 2] = targetColor; 
         }
         tCtx.putImageData(imgData, 0, 0);
-    
+
+        // --- VISUAL DEBUGGER START ---
+        // Check if a debug container exists on your page; if not, create one at the bottom of the body
+        let debugContainer = document.getElementById('tesseract-debug-container');
+        if (!debugContainer) {
+          debugContainer = document.createElement('div');
+          debugContainer.id = 'tesseract-debug-container';
+          debugContainer.style.position = 'fixed';
+          debugContainer.style.bottom = '10px';
+          debugContainer.style.right = '10px';
+          debugContainer.style.zIndex = '99999';
+          debugContainer.style.backgroundColor = 'rgba(0, 0, 0, 0.85)';
+          debugContainer.style.color = '#fff';
+          debugContainer.style.padding = '10px';
+          debugContainer.style.borderRadius = '8px';
+          debugContainer.style.maxHeight = '400px';
+          debugContainer.style.overflowY = 'auto';
+          debugContainer.style.fontFamily = 'monospace';
+          debugContainer.style.fontSize = '12px';
+          debugContainer.style.border = '2px solid #ff4444';
+          document.body.appendChild(debugContainer);
+          
+          // Clear old frames on a new scanning cycle execution loop
+          debugContainer.innerHTML = '<strong>OCR Preprocessing Debug Frames:</strong><br>';
+        }
+        
+        // Create a visual row wrapper for this specific titan part crop
+        const row = document.createElement('div');
+        row.style.marginBottom = '8px';
+        row.style.borderBottom = '1px solid #444';
+        row.style.paddingBottom = '4px';
+        
+        const label = document.createElement('div');
+        label.innerText = `Part: ${partName} (${cW}x${cH} scaled 3x)`;
+        row.appendChild(label);
+        
+        // Create an image snapshot of the canvas data buffer matrix
+        const debugImg = document.createElement('img');
+        debugImg.src = textCrop.toDataURL();
+        debugImg.style.border = '1px solid #00ff00'; // Green border around the crop area frame
+        debugImg.style.backgroundColor = '#fff';     // White background highlight
+        debugImg.style.margin = '4px 0';
+        debugImg.style.display = 'block';
+        row.appendChild(debugImg);
+        
+        // Placeholder text element to view what text Tesseract extracts next
+        const ocrTextLabel = document.createElement('div');
+        ocrTextLabel.id = `debug-text-${partName}`;
+        ocrTextLabel.style.color = '#ffcc00';
+        ocrTextLabel.innerText = 'Extracting...';
+        row.appendChild(ocrTextLabel);
+        
+        debugContainer.appendChild(row);
+        // --- VISUAL DEBUGGER END ---
+
         // Convert processed canvas buffer to DataURL for Tesseract to ingest
         const processedDataUrl = textCrop.toDataURL();
         
@@ -139,7 +193,8 @@ async function parsePartHealthPools(raidImgElement, bounds) {
           // 5. OCR Pass execution on the high-contrast single line text frame
           const ocrResult = await sharedWorker.recognize(processedDataUrl);
           let cleanText = ocrResult.data.text.trim().toUpperCase().replace(/\s+/g, '');
-          console.log('Part name: ', partName, '. Clean text: ', cleanText);
+          const textLabel = document.getElementById(`debug-text-${partName}`);
+          if (textLabel) textLabel.innerText = `Extracted Text: "${cleanText}"`;
     
           // Strict syntax validation regex checking for valid numbers and optional metric suffixes
           const validMetricRegex = /^[0-9]+\.[0-9]{2}[MBK]?\$/;
