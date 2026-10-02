@@ -116,7 +116,7 @@ async function parsePartHealthPools(raidImgElement, bounds) {
             g: d[pixelIndex + 1],
             b: d[pixelIndex + 2]
           };
-          console.log('RGB value of text: ", targetRGB);
+          console.log("RGB value of text: ", targetRGB);
           const tolerance = 45;
         
           // Process image byte structure using color distance masking
