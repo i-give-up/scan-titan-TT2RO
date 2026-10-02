@@ -139,6 +139,7 @@ async function parsePartHealthPools(raidImgElement, bounds) {
           // 5. OCR Pass execution on the high-contrast single line text frame
           const ocrResult = await sharedWorker.recognize(processedDataUrl);
           let cleanText = ocrResult.data.text.trim().toUpperCase().replace(/\s+/g, '');
+          console.log('Part name: ', partName, '. Clean text: ', cleanText);
     
           // Strict syntax validation regex checking for valid numbers and optional metric suffixes
           const validMetricRegex = /^[0-9]+\.[0-9]{2}[MBK]?\$/;
