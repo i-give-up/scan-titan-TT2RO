@@ -86,10 +86,23 @@ async function parsePartHealthPools(raidImgElement, bounds) {
     
     // Locate the canvas drawing loop inside parsePartHealthPools inside modules/ocrEngine.js and match this structure:
     for (const [partName, cropMap] of Object.entries(PART_HEALTH_TEXT_CROPS)) {
+        // Calculate the exact scaling factor between the browser bounds and the real image resolution
+        const scaleY = raidImgElement.naturalHeight / bounds.height;
+        
+        // Convert the percentage coordinates into pixel coordinates aligned to the image's raw resolution
         const cX = Math.round(cropMap.x * raidImgElement.naturalWidth);
-        const cY = Math.round((cropMap.y * bounds.height) + bounds.top - (cropMap.h * bounds.height / 2));
         const cW = Math.round(cropMap.w * raidImgElement.naturalWidth);
-        const cH = Math.round(cropMap.h * bounds.height);
+        
+        // Map vertical coordinates safely to naturalHeight using the scale factor
+        const trueCenterY = (cropMap.y * bounds.height) + bounds.top;
+        const cY = Math.round((trueCenterY - (cropMap.h * bounds.height / 2)) * scaleY);
+        const cH = Math.round(cropMap.h * bounds.height * scaleY);
+        
+        // Safety Guardrail: Prevent processing if calculated coordinates collapse to invalid boundaries
+        if (cW <= 0 || cH <= 0 || cX + cW > raidImgElement.naturalWidth || cY + cH > raidImgElement.naturalHeight) {
+          healthPools[partName] = "Missing Bar / Skeleton";
+          continue;
+        }
     
         // Setup the intermediate canvas matrix
         const textCrop = document.createElement('canvas');
