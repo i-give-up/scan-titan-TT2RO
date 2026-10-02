@@ -129,7 +129,7 @@ function determineLayerState(hsl, rgb) {
     }
 
     // Check for Armor Layer (Grey/White/Metallic)
-    if (h >= 236 && s <= 44 && l >= 89) {
+    if (h >= 236 && s <= 50 && l >= 89) {
         return "Armor Layer";
     }
 
