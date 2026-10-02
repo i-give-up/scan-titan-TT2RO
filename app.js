@@ -107,7 +107,7 @@ matchBtn.addEventListener('click', async () => {
 
         statusText.textContent = `⏳ Phase 3: Merging data blocks and parsing targeted metrics for ${titanName}...`;
         // 3. OCR Scan on Stats Image using the located Titan name
-        const infoOcrResults = await parseInfoImage(infoPreview, titanName);
+        const infoOcrResults = await parseInfoImage(infoPreview, titanName, bounds);
 
         // 4. Build consolidated data structure combining both screens
         const consolidatedData = compileDataset(visualPartStates, raidOcrResults, infoOcrResults, titanName);
