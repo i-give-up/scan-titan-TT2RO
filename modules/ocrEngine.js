@@ -93,7 +93,7 @@ async function parsePartHealthPools(raidImgElement, bounds) {
         // Run Pass 1 to detect word objects on the current cropped area
         const pass1Result = await sharedWorker.recognize(textCrop);
         const words = pass1Result.data.words;
-        
+        console.log('Part name: ', partName, ', Health text from first pass: ', words);
         const imgData = tCtx.getImageData(0, 0, cW, cH);
         const d = imgData.data;
         
